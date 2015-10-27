@@ -14,20 +14,31 @@ public:
 
 	bool Start();
 	update_status Update();
+	update_status PostUpdate();
 	bool CleanUp();
 	void OnCollision(PhysBody* bodyA, PhysBody* bodyB);
 	bool GenBackground();
 
 public:
-	p2List<PhysBody*> circles;
-	p2List<PhysBody*> bgList;
+	p2List<PhysBody*> balls;
 
 	SDL_Texture* background_up;
 	SDL_Texture* background;
+	SDL_Texture* rFlipper;
+	SDL_Texture* lFlipper;
 
 	SDL_Texture* circle;
 	uint bonus_fx;
 
+	int launcherCount;
+	PhysBody* launcher;
+	PhysBody* rightFlipper;
+	PhysBody* leftFlipper;
+	PhysBody* lostBallZone;
 	bool draw;
 	bool magnet;
+
+private:
+	void InputCommands();
+
 };

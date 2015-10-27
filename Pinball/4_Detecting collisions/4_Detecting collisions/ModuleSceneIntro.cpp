@@ -27,7 +27,10 @@ bool ModuleSceneIntro::Start()
 	background_up = App->textures->Load("pinball/bg_up.png");
 	background = App->textures->Load("pinball/bg.png");
 	circle = App->textures->Load("pinball/ballSmall.png"); 
+	rFlipper = App->textures->Load("pinball/rFlipper.png");
+	lFlipper = App->textures->Load("pinball/lFlipper.png");
 	bonus_fx = App->audio->LoadFx("pinball/bonus.wav");
+
 
 	ret = GenBackground();
 
@@ -45,12 +48,70 @@ bool ModuleSceneIntro::CleanUp()
 // Update: draw background
 update_status ModuleSceneIntro::Update()
 {
+	InputCommands();
 
-	if(App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
+	p2List_item<PhysBody*>* c = balls.getFirst();
+	while (c != NULL && magnet)
+	{
+		int x, y;
+		c->data->GetPosition(x, y);
+		b2Vec2 force((App->input->GetMouseX() - x) / 50.0f, (App->input->GetMouseY() - y) / 50.0f);
+		c->data->body->ApplyForceToCenter(force, true);
+		c = c->next;
+	}
+
+
+	// All draw functions ------------------------------------------------------
+	if (draw)
+	{
+		//Drawing background
+		App->renderer->Blit(background, 0, 0, NULL);
+
+		//Drawing balls
+		c = balls.getFirst();
+		while (c != NULL)
+		{
+			int x, y;
+			c->data->GetPosition(x, y);
+			App->renderer->Blit(circle, x, y, NULL);
+			c = c->next;
+		}
+		int x; int y;
+		rightFlipper->GetPosition(x, y); 
+		App->renderer->Blit(rFlipper, x, y -8, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle());
+		leftFlipper->GetPosition(x, y);
+		App->renderer->Blit(lFlipper, x, y - 8, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle());
+
+		//Background items that go above the ball
+		App->renderer->Blit(background_up, 0, 0, NULL);
+	}
+
+	return UPDATE_CONTINUE;
+}
+
+void ModuleSceneIntro::InputCommands()
+{
+	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
+	{
+		PhysBody* circle = App->physics->CreateBall(640, 600);
+		balls.add(circle);
+		circle->listener = this;
+		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
+	}
+	if (App->input->GetKey(SDL_SCANCODE_2) == KEY_DOWN)
 	{
 		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
-		circles.add(circle);
+		balls.add(circle);
 		circle->listener = this;
+		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
+	}
+	if (App->input->GetKey(SDL_SCANCODE_3) == KEY_REPEAT)
+	{
+
+		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
+		balls.add(circle);
+		circle->listener = this;
+
 		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
 	}
 	if (App->input->GetKey(SDL_SCANCODE_F2) == KEY_DOWN)
@@ -66,50 +127,85 @@ update_status ModuleSceneIntro::Update()
 		App->physics->InvertGravity();
 	}
 
-	p2List_item<PhysBody*>* c = circles.getFirst();
-	while (c != NULL && magnet)
+	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_DOWN)
 	{
-		int x, y;
-		c->data->GetPosition(x, y);
-		b2Vec2 force((App->input->GetMouseX() - x) / 50, (App->input->GetMouseY() - y) / 50);
-		c->data->body->ApplyForceToCenter(force, true);
-		c = c->next;
+		rightFlipper->joint->SetMotorSpeed(12.0f);
+	}
+	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_UP)
+	{
+		rightFlipper->joint->SetMotorSpeed(-12.0f);
+	}
+	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_DOWN)
+	{
+		leftFlipper->joint->SetMotorSpeed(-12.0f);
+	}
+	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_UP)
+	{
+		leftFlipper->joint->SetMotorSpeed(12.0f);
 	}
 
-
-	// All draw functions ------------------------------------------------------
-	if (draw)
+	if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN)
 	{
-		//Drawing background
-		App->renderer->Blit(background, 0, 0, NULL);
+		b2PrismaticJoint* joint = (b2PrismaticJoint*)launcher->body->GetJointList()->joint;
+		joint->EnableMotor(true);
+		launcherCount = 0;
+	}
+	else if (launcherCount < 50)
+	{
+		launcherCount++;
+	}
+	else
+	{
+		b2PrismaticJoint* joint = (b2PrismaticJoint*)launcher->body->GetJointList()->joint;
+		joint->EnableMotor(false);
+	}
+}
 
-		c = circles.getFirst();
-		while (c != NULL)
+update_status ModuleSceneIntro::PostUpdate()
+{
+	//Deleting dead balls
+	p2List_item<PhysBody*>* currentBall = balls.getFirst();
+	p2List_item<PhysBody*>* nextBall;
+	while (currentBall)
+	{
+		nextBall = currentBall->next;
+		if (currentBall->data->dead == true)
 		{
-			int x, y;
-			c->data->GetPosition(x, y);
-			App->renderer->Blit(circle, x, y, NULL/*, 1.0f, c->data->GetRotation()*/);
-			c = c->next;
+			App->physics->world->DestroyBody(currentBall->data->body);
+			balls.del(currentBall);
 		}
-
-		//Background items that go above the ball
-		App->renderer->Blit(background_up, 0, 0, NULL);
+		currentBall = nextBall;
 	}
 
-	return UPDATE_CONTINUE;
+		return UPDATE_CONTINUE;
 }
 
 void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 {
 	//App->audio->PlayFx(bonus_fx);
-
+	if (bodyB && bodyA)
+	{
+		if (bodyA == lostBallZone || bodyB == lostBallZone)
+		{
+			if (balls.find(bodyA) != -1)
+			{
+				bodyA->dead = true;
+			}
+			else if (balls.find(bodyB) != -1)
+			{
+				bodyB->dead = true;
+			}
+			//	App->physics->world->DestroyBody(bodyB->body);
+		//	delete bodyB;
+		}
+	}
 }
 // TODO 8: Now just define collision callback for the circle and play bonus_fx audio
 
 bool ModuleSceneIntro::GenBackground()
 {
 	bool ret = true;
-	/*	int exterior[50] = {
+		int exterior[50] = {
 			232, 650,
 			62, 549,
 			112, 365,
@@ -136,7 +232,7 @@ bool ModuleSceneIntro::GenBackground()
 			0, 620,
 			104, 649
 		};
-		bgList.add(App->physics->CreateChain(0, 0, exterior, 50));
+		App->physics->CreateChain( exterior, 50);
 
 		int rightDown[16] = {
 			407, 650,
@@ -148,7 +244,7 @@ bool ModuleSceneIntro::GenBackground()
 			528, 240,
 			630, 649
 		};
-		bgList.add(App->physics->CreateChain(0, 0, rightDown, 16));
+		App->physics->CreateChain( rightDown, 16);
 
 		int rightStick[12] = {
 			436, 567,
@@ -158,7 +254,7 @@ bool ModuleSceneIntro::GenBackground()
 			536, 505,
 			434, 557
 		};
-		bgList.add(App->physics->CreateChain(0, 0, rightStick, 12));
+		App->physics->CreateChain( rightStick, 12);
 
 		int leftStick[12] = {
 			214, 563,
@@ -168,7 +264,7 @@ bool ModuleSceneIntro::GenBackground()
 			116, 502,
 			216, 557
 		};
-		bgList.add(App->physics->CreateChain(0, 0, leftStick, 12));
+		App->physics->CreateChain( leftStick, 12);
 
 		int rightBumper[18] = {
 			430, 503,
@@ -181,7 +277,7 @@ bool ModuleSceneIntro::GenBackground()
 			444, 490,
 			433, 491
 		};
-		bgList.add(App->physics->CreateChain(0, 0, rightBumper, 18));
+		App->physics->CreateChain( rightBumper, 18);
 
 		int rightBumperBis[8] = {
 			447, 489,
@@ -189,7 +285,7 @@ bool ModuleSceneIntro::GenBackground()
 			466, 394,
 			433, 489
 		};
-		bgList.add(App->physics->CreateChain(0, 0, rightBumperBis, 8, 5.0f));
+		App->physics->CreateChain( rightBumperBis, 8, 5.0f);
 
 		int leftBumper[20] = {
 			213, 509,
@@ -203,7 +299,7 @@ bool ModuleSceneIntro::GenBackground()
 			223, 495,
 			221, 507
 		};
-		bgList.add(App->physics->CreateChain(0, 0, leftBumper, 20));
+		App->physics->CreateChain( leftBumper, 20);
 
 		int leftBumperBis[8] = {
 			203, 483,
@@ -211,7 +307,7 @@ bool ModuleSceneIntro::GenBackground()
 			190, 389,
 			181, 394
 		};
-		bgList.add(App->physics->CreateChain(0, 0, leftBumperBis, 8, 5.0f));
+		App->physics->CreateChain( leftBumperBis, 8, 5.0f);
 
 		int fan[38] = {
 			292, 243,
@@ -234,7 +330,7 @@ bool ModuleSceneIntro::GenBackground()
 			285, 173,
 			282, 243
 		};
-		bgList.add(App->physics->CreateChain(0, 0, fan, 38));
+		App->physics->CreateChain( fan, 38);
 
 		int fanInternal[10] = {
 			340, 195,
@@ -243,7 +339,7 @@ bool ModuleSceneIntro::GenBackground()
 			327, 196,
 			333, 191
 		};
-		bgList.add(App->physics->CreateChain(0, 0, fanInternal, 10));
+		App->physics->CreateChain( fanInternal, 10);
 
 		int blackBox[38] = {
 			455, 171,
@@ -266,7 +362,7 @@ bool ModuleSceneIntro::GenBackground()
 			453, 96,
 			463, 171
 		};
-		bgList.add(App->physics->CreateChain(0, 0, blackBox, 38));
+		App->physics->CreateChain( blackBox, 38);
 
 		int miniRight[10] = {
 			365, 40,
@@ -275,7 +371,7 @@ bool ModuleSceneIntro::GenBackground()
 			369, 55,
 			369, 44
 		};
-		bgList.add(App->physics->CreateChain(0, 0, miniRight, 10));
+		App->physics->CreateChain( miniRight, 10);
 
 		int miniLeft[10] = {
 			332, 40,
@@ -284,7 +380,7 @@ bool ModuleSceneIntro::GenBackground()
 			336, 55,
 			336, 44
 		};
-		bgList.add(App->physics->CreateChain(0, 0, miniLeft, 10));
+		App->physics->CreateChain( miniLeft, 10);
 
 		int rampZone[38] = {
 			215, 139,
@@ -307,7 +403,7 @@ bool ModuleSceneIntro::GenBackground()
 			216, 67,
 			205, 139
 		};
-		bgList.add(App->physics->CreateChain(0, 0, rampZone, 38));
+		App->physics->CreateChain( rampZone, 38);
 
 		int orangeLeft[14] = {
 			292, 100,
@@ -318,7 +414,7 @@ bool ModuleSceneIntro::GenBackground()
 			319, 100,
 			306, 93
 		};
-		bgList.add(App->physics->CreateChain(0, 0, orangeLeft, 14, 2.0f));
+		App->physics->CreateChain( orangeLeft, 14, 2.0f);
 
 
 		int orangeCenter[14] = {
@@ -330,7 +426,7 @@ bool ModuleSceneIntro::GenBackground()
 			355, 78,
 			342, 71
 		};
-		bgList.add(App->physics->CreateChain(0, 0, orangeCenter, 14, 2.0f));
+		App->physics->CreateChain( orangeCenter, 14, 2.0f);
 
 		int orangeRight[14] = {
 			360, 100,
@@ -341,7 +437,34 @@ bool ModuleSceneIntro::GenBackground()
 			387, 100,
 			374, 93
 		};
-		bgList.add(App->physics->CreateChain(0, 0, orangeRight, 14, 2.0f));
-		*/
+		App->physics->CreateChain( orangeRight, 14, 2.0f);
+
+		int bottomTriangle[6] = {
+			312, 651,
+			323, 633,
+			333, 652
+		};
+		App->physics->CreateChain( bottomTriangle, 6);
+		
+		int loseBall[8] = {
+			0, 0,
+			0, 670,
+			700, 670,
+			700, 0
+		};
+		lostBallZone = App->physics->CreateChain( loseBall, 8);
+		lostBallZone->listener = App->scene_intro;
+
+		rightFlipper = App->physics->CreateFlipper(430, 570, 1);
+		leftFlipper = App->physics->CreateFlipper(220, 570, 0);
+
+		int launcherp[8] = {
+			620, 628,
+			666, 625,
+			671, 645,
+			623, 645
+		};
+		launcher = App->physics->CreateLauncher(launcherp, 8, 650, 650);
+	
 		return ret;
 }

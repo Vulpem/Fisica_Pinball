@@ -16,8 +16,12 @@
 class PhysBody
 {
 public:
-	PhysBody() : body(NULL), listener(NULL)
+	PhysBody() : body(NULL), listener(NULL), dead(false), joint(NULL)
 	{}
+
+	~PhysBody(){
+		body->GetWorld()->DestroyBody(body);
+	};
 
 	void GetPosition(int& x, int &y) const;
 	float GetRotation() const;
@@ -28,6 +32,8 @@ public:
 	int width, height;
 	b2Body* body;
 	Module* listener;
+	b2RevoluteJoint* joint;
+	bool dead;
 	// TODO 6: Add a pointer to a module that might want to listen to a collision from this body
 };
 
@@ -46,17 +52,20 @@ public:
 	bool CleanUp();
 
 	PhysBody* CreateBall(int x, int y);
-	PhysBody* CreateRectangle(int x, int y, int width, int height);
-	PhysBody* CreateRectangleSensor(int x, int y, int width, int height);
-	PhysBody* CreateChain(int x, int y, int* points, int size);
-	PhysBody* CreateChain(int x, int y, int* points, int size, float restitution);
+	PhysBody* CreateChain(int* points, int size);
+	PhysBody* CreateChain(int* points, int size, float restitution);
+	PhysBody* CreateFlipper(int pivotX, int pivotY, int right);
+	PhysBody* CreateLauncher(int* points, int size, int pivotX, int pivotY);
 
 	void BeginContact(b2Contact* contact);
 
 	void InvertGravity();
 
-private:
+
 
 	bool debug;
 	b2World* world;
+
+private:
+
 };
