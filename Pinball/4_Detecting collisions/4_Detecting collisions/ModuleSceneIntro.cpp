@@ -48,7 +48,7 @@ update_status ModuleSceneIntro::Update()
 
 	if(App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
 	{
-		PhysBody* circle = App->physics->CreateCircle(App->input->GetMouseX(), App->input->GetMouseY(), 8);
+		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
 		circles.add(circle);
 		circle->listener = this;
 		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
@@ -109,7 +109,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 bool ModuleSceneIntro::GenBackground()
 {
 	bool ret = true;
-		int exterior[50] = {
+	/*	int exterior[50] = {
 			232, 650,
 			62, 549,
 			112, 365,
@@ -342,6 +342,6 @@ bool ModuleSceneIntro::GenBackground()
 			374, 93
 		};
 		bgList.add(App->physics->CreateChain(0, 0, orangeRight, 14, 2.0f));
-
+		*/
 		return ret;
 }

@@ -12,6 +12,9 @@
 #pragma comment( lib, "Box2D/libx86/Release/Box2D.lib" )
 #endif
 
+#define BALL_RADIUS 8
+
+
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled), b2ContactListener()
 {
 	world = NULL;
@@ -49,7 +52,7 @@ update_status ModulePhysics::PreUpdate()
 	return UPDATE_CONTINUE;
 }
 
-PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius)
+PhysBody* ModulePhysics::CreateBall(int x, int y)
 {
 	b2BodyDef body;
 	body.type = b2_dynamicBody;
@@ -60,7 +63,7 @@ PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius)
 	b2Body* b = world->CreateBody(&body);
 
 	b2CircleShape shape;
-	shape.m_radius = PIXEL_TO_METERS(radius);
+	shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS);
 	b2FixtureDef fixture;
 	fixture.shape = &shape;
 	fixture.density = 1.0f;
@@ -69,8 +72,6 @@ PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius)
 
 	// TODO 4: add a pointer to PhysBody as UserData to the body
 	
-	pbody->body = b;
-	pbody->width = pbody->height = radius;
 	return pbody;
 }
 
