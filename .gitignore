@@ -12,8 +12,6 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
 build/
 bld/
 [Bb]in/
@@ -194,8 +192,6 @@ FakesAssemblies/
 .AppleDouble
 .LSOverride
 
-# Thumbnails
-._*
 
 # Files that might appear on external disk
 .Spotlight-V100
