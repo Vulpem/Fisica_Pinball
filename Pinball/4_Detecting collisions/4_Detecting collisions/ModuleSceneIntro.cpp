@@ -76,11 +76,13 @@ update_status ModuleSceneIntro::Update()
 			App->renderer->Blit(circle, x, y, NULL);
 			c = c->next;
 		}
+
 		int x; int y;
 		rightFlipper->GetPosition(x, y); 
-		App->renderer->Blit(rFlipper, x, y -8, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle());
+		App->renderer->Blit(rFlipper, x-79, y-10, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle(), 79, 10);
+
 		leftFlipper->GetPosition(x, y);
-		App->renderer->Blit(lFlipper, x, y - 8, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle());
+		App->renderer->Blit(lFlipper, x-14, y-9, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle(), 14, 9);
 
 		//Background items that go above the ball
 		App->renderer->Blit(background_up, 0, 0, NULL);
@@ -127,21 +129,21 @@ void ModuleSceneIntro::InputCommands()
 		App->physics->InvertGravity();
 	}
 
-	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_DOWN)
+	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_REPEAT)
 	{
-		rightFlipper->joint->SetMotorSpeed(12.0f);
+		rightFlipper->body->ApplyAngularImpulse(DEGTORAD * 150, true);
 	}
-	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_UP)
+	else
 	{
-		rightFlipper->joint->SetMotorSpeed(-12.0f);
+		rightFlipper->body->ApplyAngularImpulse(DEGTORAD * -50, true);
 	}
-	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_DOWN)
+	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_REPEAT)
 	{
-		leftFlipper->joint->SetMotorSpeed(-12.0f);
+		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * -150, true);
 	}
-	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_UP)
+	else
 	{
-		leftFlipper->joint->SetMotorSpeed(12.0f);
+		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * 50, true);
 	}
 
 	if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN)
@@ -285,7 +287,7 @@ bool ModuleSceneIntro::GenBackground()
 			466, 394,
 			433, 489
 		};
-		App->physics->CreateChain( rightBumperBis, 8, 5.0f);
+		App->physics->CreateChain( rightBumperBis, 8, 2.0f);
 
 		int leftBumper[20] = {
 			213, 509,
@@ -307,7 +309,7 @@ bool ModuleSceneIntro::GenBackground()
 			190, 389,
 			181, 394
 		};
-		App->physics->CreateChain( leftBumperBis, 8, 5.0f);
+		App->physics->CreateChain( leftBumperBis, 8, 2.0f);
 
 		int fan[38] = {
 			292, 243,
@@ -455,8 +457,29 @@ bool ModuleSceneIntro::GenBackground()
 		lostBallZone = App->physics->CreateChain( loseBall, 8);
 		lostBallZone->listener = App->scene_intro;
 
-		rightFlipper = App->physics->CreateFlipper(430, 570, 1);
-		leftFlipper = App->physics->CreateFlipper(220, 570, 0);
+		int rFlipper[16] = {
+			425, 562,
+			359, 590,
+			352, 596,
+			352, 602,
+			357, 606,
+			435, 583,
+			441, 574,
+			435, 562
+		};
+		rightFlipper = App->physics->CreateFlipper(rFlipper, 430, 570, 1);
+
+		int lFlipper[16] = {
+			221, 560,
+			291, 592,
+			295, 599,
+			292, 605,
+			285, 606,
+			210, 585,
+			206, 574,
+			211, 563
+		};
+		leftFlipper = App->physics->CreateFlipper(lFlipper, 220, 570, 0);
 
 		int launcherp[8] = {
 			620, 628,

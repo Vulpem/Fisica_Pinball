@@ -32,6 +32,7 @@ bool ModulePhysics::Start()
 
 	world = new b2World(b2Vec2(GRAVITY_X, GRAVITY_Y));
 	world->SetContactListener((b2ContactListener*)this);
+
 	return true;
 }
 
@@ -61,11 +62,13 @@ PhysBody* ModulePhysics::CreateBall(int x, int y)
 
 	b2Body* b = world->CreateBody(&body);
 
+	b->SetBullet(true);
+
 	b2CircleShape shape;
 	shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS);
 	b2FixtureDef fixture;
 	fixture.shape = &shape;
-	fixture.density = 1.0f;
+	fixture.density = 0.5f;
 
 	b->CreateFixture(&fixture);
 
@@ -151,19 +154,13 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size, float restitution)
 	return pbody;
 }
 
-PhysBody* ModulePhysics::CreateFlipper(int pivotX, int pivotY, int right)
+PhysBody* ModulePhysics::CreateFlipper(int* points, int pivotX, int pivotY, int right)
 {
 
 	b2BodyDef body;
 	body.type = b2_dynamicBody;
-	if (right)
-	{
-		body.position.Set(PIXEL_TO_METERS(pivotX - 0.8), PIXEL_TO_METERS(pivotY));
-	}
-	else
-	{
-		body.position.Set(PIXEL_TO_METERS(pivotX + 0.8), PIXEL_TO_METERS(pivotY));
-	}
+
+	body.position.Set(PIXEL_TO_METERS(pivotX), PIXEL_TO_METERS(pivotY));
 	
 	PhysBody* pbody = new PhysBody();
 	body.userData = pbody;
@@ -171,7 +168,18 @@ PhysBody* ModulePhysics::CreateFlipper(int pivotX, int pivotY, int right)
 	b2Body* b = world->CreateBody(&body);
 
 	b2PolygonShape shape;
-	shape.SetAsBox(PIXEL_TO_METERS(45), PIXEL_TO_METERS(9));
+
+	b2Vec2* p = new b2Vec2[8]; //  16/2
+
+	for (uint i = 0; i < 8; ++i)
+	{
+		int point = points[i * 2 + 0] - pivotX;
+		p[i].x = PIXEL_TO_METERS(point);
+		point = points[i * 2 + 1] - pivotY;
+		p[i].y = PIXEL_TO_METERS(point);
+	}
+
+	shape.Set(p, 8);
 	b2FixtureDef fixture;
 	fixture.shape = &shape;
 	fixture.density = 1.0f;
@@ -181,7 +189,7 @@ PhysBody* ModulePhysics::CreateFlipper(int pivotX, int pivotY, int right)
 	// TODO 4: add a pointer to PhysBody as UserData to the body
 
 	pbody->body = b;
-	pbody->width = 50;  pbody->height = 5;
+	pbody->width = pbody->height = 0;
 
 	int pivPos[8] = { pivotX - 2, pivotY - 2, pivotX + 2, pivotY - 2, pivotX + 2, pivotY + 2, pivotX - 2, pivotY + 2 };
 	PhysBody* pivot = CreateChain(pivPos, 8);
@@ -191,24 +199,21 @@ PhysBody* ModulePhysics::CreateFlipper(int pivotX, int pivotY, int right)
 	joint.collideConnected = false;
 	if (right)
 	{
-		joint.lowerAngle = -15.0f * DEGTORAD;
-		joint.upperAngle = 45.0f * DEGTORAD;
-		joint.motorSpeed = -4.0f;
-		joint.referenceAngle = -10.0f * DEGTORAD;
+		joint.lowerAngle = 0.0f * DEGTORAD;
+		joint.upperAngle = 60.0f * DEGTORAD;;
 	}
 	else
 	{
-		joint.lowerAngle = -45.0f * DEGTORAD;
-		joint.upperAngle = 15.0f * DEGTORAD;
-		joint.motorSpeed = 4.0f;
-		joint.referenceAngle = 10.0f * DEGTORAD;
+		joint.lowerAngle = -60.0f * DEGTORAD;
+		joint.upperAngle = 0.0f * DEGTORAD;
 	}
 	joint.enableLimit = true;
-	joint.enableMotor = true;
 	joint.maxMotorTorque = 5000.0f;
 	joint.type = e_revoluteJoint;
 	pbody->joint = (b2RevoluteJoint*)world->CreateJoint(&joint);
 	
+	delete p;
+
 	return pbody;
 }
 

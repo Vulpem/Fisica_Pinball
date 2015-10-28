@@ -54,7 +54,7 @@ public:
 	PhysBody* CreateBall(int x, int y);
 	PhysBody* CreateChain(int* points, int size);
 	PhysBody* CreateChain(int* points, int size, float restitution);
-	PhysBody* CreateFlipper(int pivotX, int pivotY, int right);
+	PhysBody* CreateFlipper(int* points, int pivotX, int pivotY, int right);
 	PhysBody* CreateLauncher(int* points, int size, int pivotX, int pivotY);
 
 	void BeginContact(b2Contact* contact);
