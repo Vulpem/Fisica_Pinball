@@ -249,22 +249,22 @@ bool ModuleSceneIntro::GenBackground()
 		App->physics->CreateChain( rightDown, 16);
 
 		int rightStick[12] = {
-			436, 567,
+			436, 556,
 			544, 511,
 			521, 387,
 			515, 386,
 			536, 505,
-			434, 557
+			434, 552
 		};
 		App->physics->CreateChain( rightStick, 12);
 
 		int leftStick[12] = {
-			214, 563,
+			210, 556,
 			108, 507,
 			138, 387,
 			143, 387,
 			116, 502,
-			216, 557
+			218, 552
 		};
 		App->physics->CreateChain( leftStick, 12);
 
