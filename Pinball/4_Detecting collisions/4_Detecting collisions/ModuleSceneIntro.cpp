@@ -526,7 +526,7 @@ bool ModuleSceneIntro::GenBackground()
 			671, 645,
 			623, 645
 		};
-		launcher = App->physics->CreateLauncher(launcherp, 8, 650, 650);
+		launcher = App->physics->CreateLauncher(launcherp, 8, 690, 650);
 	
 		return ret;
 }
