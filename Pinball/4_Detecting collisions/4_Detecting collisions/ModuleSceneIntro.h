@@ -35,10 +35,16 @@ public:
 	PhysBody* rightFlipper;
 	PhysBody* leftFlipper;
 	PhysBody* lostBallZone;
+	PhysBody* bouncyRight;
+	PhysBody* bouncyLeft;
+
 	bool draw;
 	bool magnet;
 
 private:
 	void InputCommands();
+	void ResizeBalls();
+	void Draw();
+	void Magnetize();
 
 };

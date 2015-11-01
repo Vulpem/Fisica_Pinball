@@ -20,6 +20,8 @@ public:
 
 	void SetTitle(const char* title);
 
+	void GetSize(int& x, int& y) const;
+
 public:
 	//The window we'll be rendering to
 	SDL_Window* window;

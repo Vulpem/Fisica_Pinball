@@ -88,3 +88,9 @@ void ModuleWindow::SetTitle(const char* title)
 {
 	SDL_SetWindowTitle(window, title);
 }
+
+void  ModuleWindow::GetSize(int& x, int& y) const
+{
+	x = screen_surface->h;
+	y = screen_surface->w;
+}

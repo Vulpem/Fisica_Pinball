@@ -6,6 +6,7 @@
 #include "ModuleTextures.h"
 #include "ModuleAudio.h"
 #include "ModulePhysics.h"
+#include "ModuleWindow.h"
 
 ModuleSceneIntro::ModuleSceneIntro(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
@@ -50,6 +51,20 @@ update_status ModuleSceneIntro::Update()
 {
 	InputCommands();
 
+	ResizeBalls();
+
+	if (magnet)
+	{
+		Magnetize();
+	}
+
+	Draw();
+
+	return UPDATE_CONTINUE;
+}
+
+void ModuleSceneIntro::Magnetize()
+{
 	p2List_item<PhysBody*>* c = balls.getFirst();
 	while (c != NULL && magnet)
 	{
@@ -59,8 +74,33 @@ update_status ModuleSceneIntro::Update()
 		c->data->body->ApplyForceToCenter(force, true);
 		c = c->next;
 	}
+}
 
+void ModuleSceneIntro::ResizeBalls()
+{
+	p2List_item<PhysBody*>* c = balls.getFirst();
+	while (c != NULL)
+	{
+		c->data->body->DestroyFixture(c->data->body->GetFixtureList());
 
+		int x, y;
+		int windowW, windowH;
+		c->data->GetPosition(x, y);
+		App->window->GetSize(windowW, windowH);
+		c->data->scale = (float)y / (float)windowH + 1.0f;
+		b2CircleShape shape;
+		shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS * c->data->scale);
+		b2FixtureDef fixture;
+		fixture.shape = &shape;
+		fixture.density = 0.5f;
+		c->data->body->CreateFixture(&fixture);
+
+		c = c->next;
+	}
+}
+
+void ModuleSceneIntro::Draw()
+{
 	// All draw functions ------------------------------------------------------
 	if (draw)
 	{
@@ -68,27 +108,25 @@ update_status ModuleSceneIntro::Update()
 		App->renderer->Blit(background, 0, 0, NULL);
 
 		//Drawing balls
-		c = balls.getFirst();
+		p2List_item<PhysBody*>* c = balls.getFirst();
 		while (c != NULL)
 		{
 			int x, y;
 			c->data->GetPosition(x, y);
-			App->renderer->Blit(circle, x, y, NULL);
+			App->renderer->Blit(circle, x, y, NULL, 0.0f, 0,0,0,c->data->scale);
 			c = c->next;
 		}
 
 		int x; int y;
-		rightFlipper->GetPosition(x, y); 
-		App->renderer->Blit(rFlipper, x-79, y-10, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle(), 79, 10);
+		rightFlipper->GetPosition(x, y);
+		App->renderer->Blit(rFlipper, x - 79, y - 10, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle(), 79, 10);
 
 		leftFlipper->GetPosition(x, y);
-		App->renderer->Blit(lFlipper, x-14, y-9, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle(), 14, 9);
+		App->renderer->Blit(lFlipper, x - 14, y - 9, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle(), 14, 9);
 
 		//Background items that go above the ball
 		App->renderer->Blit(background_up, 0, 0, NULL);
 	}
-
-	return UPDATE_CONTINUE;
 }
 
 void ModuleSceneIntro::InputCommands()
@@ -98,14 +136,12 @@ void ModuleSceneIntro::InputCommands()
 		PhysBody* circle = App->physics->CreateBall(640, 600);
 		balls.add(circle);
 		circle->listener = this;
-		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
 	}
 	if (App->input->GetKey(SDL_SCANCODE_2) == KEY_DOWN)
 	{
 		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
 		balls.add(circle);
 		circle->listener = this;
-		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
 	}
 	if (App->input->GetKey(SDL_SCANCODE_3) == KEY_REPEAT)
 	{
@@ -113,8 +149,6 @@ void ModuleSceneIntro::InputCommands()
 		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
 		balls.add(circle);
 		circle->listener = this;
-
-		// TODO 8: Make sure to add yourself as collision callback to the circle you creates
 	}
 	if (App->input->GetKey(SDL_SCANCODE_F2) == KEY_DOWN)
 	{
@@ -197,12 +231,19 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			{
 				bodyB->dead = true;
 			}
-			//	App->physics->world->DestroyBody(bodyB->body);
-		//	delete bodyB;
 		}
+
+		if (bodyA == bouncyLeft || bodyA == bouncyRight)
+		{
+			App->physics->Bounce(bodyB, bodyA, 30);
+		}
+		if (bodyB == bouncyLeft || bodyB == bouncyRight)
+		{
+			App->physics->Bounce(bodyA, bodyB, 30);
+		}
+
 	}
 }
-// TODO 8: Now just define collision callback for the circle and play bonus_fx audio
 
 bool ModuleSceneIntro::GenBackground()
 {
@@ -287,7 +328,10 @@ bool ModuleSceneIntro::GenBackground()
 			466, 394,
 			433, 489
 		};
-		App->physics->CreateChain( rightBumperBis, 8, 2.0f);
+		//App->physics->CreateChain( rightBumperBis, 8, 2.0f);
+		bouncyRight = App->physics->CreateChain(rightBumperBis, 8);
+		bouncyRight->listener = App->scene_intro;
+		
 
 		int leftBumper[20] = {
 			213, 509,
@@ -309,7 +353,9 @@ bool ModuleSceneIntro::GenBackground()
 			190, 389,
 			181, 394
 		};
-		App->physics->CreateChain( leftBumperBis, 8, 2.0f);
+		//App->physics->CreateChain( leftBumperBis, 8, 2.0f);
+		bouncyLeft = App->physics->CreateChain( leftBumperBis, 8);
+		bouncyLeft->listener = App->scene_intro;
 
 		int fan[38] = {
 			292, 243,

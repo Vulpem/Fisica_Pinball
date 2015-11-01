@@ -12,11 +12,13 @@
 #define METERS_TO_PIXELS(m) ((int) floor(PIXELS_PER_METER * m))
 #define PIXEL_TO_METERS(p)  ((float) METER_PER_PIXEL * p)
 
+#define BALL_RADIUS 8
+
 // Small class to return to other modules to track position and rotation of physics bodies
 class PhysBody
 {
 public:
-	PhysBody() : body(NULL), listener(NULL), dead(false), joint(NULL)
+	PhysBody() : body(NULL), listener(NULL), dead(false), joint(NULL), scale(1.0f)
 	{}
 
 	~PhysBody(){
@@ -33,13 +35,11 @@ public:
 	b2Body* body;
 	Module* listener;
 	b2RevoluteJoint* joint;
+	float scale;
 	bool dead;
-	// TODO 6: Add a pointer to a module that might want to listen to a collision from this body
 };
 
 // Module --------------------------------------
-// TODO 3: Make module physics inherit from b2ContactListener
-// then override void BeginContact(b2Contact* contact)
 class ModulePhysics : public Module, public b2ContactListener
 {
 public:
@@ -54,14 +54,14 @@ public:
 	PhysBody* CreateBall(int x, int y);
 	PhysBody* CreateChain(int* points, int size);
 	PhysBody* CreateChain(int* points, int size, float restitution);
+	PhysBody* CreateSensor(int* points, int size, float restitution);
 	PhysBody* CreateFlipper(int* points, int pivotX, int pivotY, int right);
 	PhysBody* CreateLauncher(int* points, int size, int pivotX, int pivotY);
 
 	void BeginContact(b2Contact* contact);
 
 	void InvertGravity();
-
-
+	void Bounce(PhysBody* movable, PhysBody* non_movable, float intensity);
 
 	bool debug;
 	b2World* world;

@@ -12,8 +12,6 @@
 #pragma comment( lib, "Box2D/libx86/Release/Box2D.lib" )
 #endif
 
-#define BALL_RADIUS 8
-
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled), b2ContactListener()
 {
 	world = NULL;
@@ -36,18 +34,26 @@ bool ModulePhysics::Start()
 	return true;
 }
 
+void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float intensity)
+{
+	b2Vec2 force;
+	b2Vec2 movableCenter;
+	b2Vec2 non_movableCenter;
+	movableCenter.x = METERS_TO_PIXELS(movable->body->GetWorldCenter().x);
+	movableCenter.y = METERS_TO_PIXELS(movable->body->GetWorldCenter().y);
+	non_movableCenter.x = METERS_TO_PIXELS(non_movable->body->GetWorldCenter().x);
+	non_movableCenter.y = METERS_TO_PIXELS(non_movable->body->GetWorldCenter().y);
+
+	movable->RayCast(movableCenter.x, movableCenter.y, non_movableCenter.x, non_movableCenter.y, force.x, force.y);
+	force.Normalize();
+	force *= intensity;
+	movable->body->ApplyForceToCenter(force, true);
+}
+
 // 
 update_status ModulePhysics::PreUpdate()
 {
 	world->Step(1.0f / 60.0f, 6, 2);
-
-
-	// TODO: HomeWork
-	/*
-	for(b2Contact* c = world->GetContactList(); c; c = c->GetNext())
-	{
-	}
-	*/
 
 	return UPDATE_CONTINUE;
 }
@@ -71,8 +77,6 @@ PhysBody* ModulePhysics::CreateBall(int x, int y)
 	fixture.density = 0.5f;
 
 	b->CreateFixture(&fixture);
-
-	// TODO 4: add a pointer to PhysBody as UserData to the body
 
 	pbody->body = b;
 	pbody->width = pbody->height = BALL_RADIUS;
@@ -154,6 +158,13 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size, float restitution)
 	return pbody;
 }
 
+PhysBody* ModulePhysics::CreateSensor(int* points, int size, float restitution)
+{
+	PhysBody* ret = CreateChain(points, size, restitution);
+	ret->body->GetFixtureList()->SetSensor(true);
+	return ret;
+}
+
 PhysBody* ModulePhysics::CreateFlipper(int* points, int pivotX, int pivotY, int right)
 {
 
@@ -185,8 +196,6 @@ PhysBody* ModulePhysics::CreateFlipper(int* points, int pivotX, int pivotY, int 
 	fixture.density = 1.0f;
 
 	b->CreateFixture(&fixture);
-
-	// TODO 4: add a pointer to PhysBody as UserData to the body
 
 	pbody->body = b;
 	pbody->width = pbody->height = 0;
@@ -394,9 +403,6 @@ bool PhysBody::Contains(int x, int y) const
 		}
 	} while (fixture = fixture->GetNext());
 
-	// TODO 1: Write the code to return true in case the point
-	// is inside ANY of the shapes contained by this body
-
 	return false;
 }
 
@@ -418,12 +424,10 @@ int PhysBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& no
 			ret = rayOutput->fraction * vect.Length();
 		}
 	} while (fixture->GetNext());
-	// TODO 2: Write code to test a ray cast between both points provided. If not hit return -1
-	// if hit, fill normal_x and normal_y and return the distance between x1,y1 and it's colliding point
+	
 	return ret;
 }
 
-// TODO 3
 void ModulePhysics::BeginContact(b2Contact* contact)
 {
 	PhysBody* a = (PhysBody*)contact->GetFixtureA()->GetBody()->GetUserData();
@@ -446,5 +450,3 @@ void ModulePhysics::InvertGravity()
 	world->SetGravity(gravity);
 
 }
-
-// TODO 7: Call the listeners that are not NULL
