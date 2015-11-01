@@ -81,20 +81,13 @@ void ModuleSceneIntro::ResizeBalls()
 	p2List_item<PhysBody*>* c = balls.getFirst();
 	while (c != NULL)
 	{
-		c->data->body->DestroyFixture(c->data->body->GetFixtureList());
-
 		int x, y;
 		int windowW, windowH;
 		c->data->GetPosition(x, y);
 		App->window->GetSize(windowW, windowH);
-		c->data->scale = (float)y / (float)windowH + 1.0f;
-		b2CircleShape shape;
-		shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS * c->data->scale);
-		b2FixtureDef fixture;
-		fixture.shape = &shape;
-		fixture.density = 0.5f;
-		c->data->body->CreateFixture(&fixture);
+		float scale = (float)y / (float)windowH + 1.0f;
 
+		c->data->Resize(scale);
 		c = c->next;
 	}
 }
@@ -329,7 +322,7 @@ bool ModuleSceneIntro::GenBackground()
 			433, 489
 		};
 		//App->physics->CreateChain( rightBumperBis, 8, 2.0f);
-		bouncyRight = App->physics->CreateChain(rightBumperBis, 8);
+		bouncyRight = App->physics->CreatePolygon(rightBumperBis, 8);
 		bouncyRight->listener = App->scene_intro;
 		
 
@@ -354,7 +347,7 @@ bool ModuleSceneIntro::GenBackground()
 			181, 394
 		};
 		//App->physics->CreateChain( leftBumperBis, 8, 2.0f);
-		bouncyLeft = App->physics->CreateChain( leftBumperBis, 8);
+		bouncyLeft = App->physics->CreatePolygon(leftBumperBis, 8);
 		bouncyLeft->listener = App->scene_intro;
 
 		int fan[38] = {

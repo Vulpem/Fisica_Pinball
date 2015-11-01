@@ -39,15 +39,28 @@ void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float inten
 	b2Vec2 force;
 	b2Vec2 movableCenter;
 	b2Vec2 non_movableCenter;
-	movableCenter.x = METERS_TO_PIXELS(movable->body->GetWorldCenter().x);
-	movableCenter.y = METERS_TO_PIXELS(movable->body->GetWorldCenter().y);
-	non_movableCenter.x = METERS_TO_PIXELS(non_movable->body->GetWorldCenter().x);
-	non_movableCenter.y = METERS_TO_PIXELS(non_movable->body->GetWorldCenter().y);
+
+	int x, y;
+	movable->GetPosition(x, y);
+
+	movableCenter.x = x;
+	movableCenter.y = y;
+
+	non_movable->GetPosition(x, y);
+	non_movableCenter.x = x;
+	non_movableCenter.y =y;
 
 	movable->RayCast(movableCenter.x, movableCenter.y, non_movableCenter.x, non_movableCenter.y, force.x, force.y);
 	force.Normalize();
 	force *= intensity;
 	movable->body->ApplyForceToCenter(force, true);
+
+	//DEBUG
+	pos1 = movableCenter;
+	pos2 = non_movableCenter;
+	norm = force;
+	//////
+
 }
 
 // 
@@ -98,13 +111,66 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size)
 	b2ChainShape shape;
 	b2Vec2* p = new b2Vec2[size / 2];
 
-	for (uint i = 0; i < size / 2; ++i)
+	int averageX = 0;
+	int averageY = 0;
+	uint i = 0;
+	for (; i < size / 2; ++i)
 	{
 		p[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
 		p[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+		averageX += points[i * 2 + 0];
+		averageY += points[i * 2 + 1];
 	}
+	pbody->SetPos(averageX / i, averageY / i);
 
 	shape.CreateLoop(p, size / 2);
+
+	b2FixtureDef fixture;
+	fixture.density = 1.0f;
+	fixture.shape = &shape;
+
+	b->CreateFixture(&fixture);
+
+	delete p;
+
+
+	pbody->body = b;
+	pbody->width = pbody->height = 0;
+
+	return pbody;
+}
+
+PhysBody* ModulePhysics::CreatePolygon(int* points, int size)
+{
+	if (size > 8)
+	{
+		return NULL;
+	}
+	b2BodyDef body;
+	body.type = b2_staticBody;
+	body.position.Set(0, 0);
+
+	PhysBody* pbody = new PhysBody();
+	body.userData = pbody;
+
+	b2Body* b = world->CreateBody(&body);
+
+	b2PolygonShape shape;
+	b2Vec2* p = new b2Vec2[size / 2];
+
+	int averageX = 0;
+	int averageY = 0;
+	uint i = 0;
+	for (; i < size / 2; ++i)
+	{
+		p[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
+		p[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+		averageX += points[i * 2 + 0];
+		averageY += points[i * 2 + 1];
+	}
+	pbody->SetPos(averageX / i, averageY / i);
+
+	shape.Set(p, size / 2);
 
 	b2FixtureDef fixture;
 	fixture.density = 1.0f;
@@ -135,11 +201,17 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size, float restitution)
 	b2ChainShape shape;
 	b2Vec2* p = new b2Vec2[size / 2];
 
-	for (uint i = 0; i < size / 2; ++i)
+	int averageX = 0;
+	int averageY = 0;
+	uint i = 0;
+	for (; i < size / 2; ++i)
 	{
 		p[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
 		p[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+		averageX += points[i * 2 + 0];
+		averageY += points[i * 2 + 1];
 	}
+	pbody->SetPos(averageX / i, averageY / i);
 
 	shape.CreateLoop(p, size / 2);
 
@@ -240,11 +312,17 @@ PhysBody* ModulePhysics::CreateLauncher(int* points, int size, int pivotX, int p
 	b2ChainShape shape;
 	b2Vec2* p = new b2Vec2[size / 2];
 
-	for (uint i = 0; i < size / 2; ++i)
+	int averageX = 0;
+	int averageY = 0;
+	uint i = 0;
+	for (; i < size / 2; ++i)
 	{
 		p[i].x = PIXEL_TO_METERS(points[i * 2 + 0]);
 		p[i].y = PIXEL_TO_METERS(points[i * 2 + 1]);
+		averageX += points[i * 2 + 0];
+		averageY += points[i * 2 + 1];
 	}
+	pbody->SetPos(averageX / i, averageY / i);
 
 	shape.CreateLoop(p, size / 2);
 	b2FixtureDef fixture;
@@ -281,6 +359,7 @@ PhysBody* ModulePhysics::CreateLauncher(int* points, int size, int pivotX, int p
 // 
 update_status ModulePhysics::PostUpdate()
 {
+	
 	if (App->input->GetKey(SDL_SCANCODE_F1) == KEY_DOWN)
 		debug = !debug;
 
@@ -291,6 +370,11 @@ update_status ModulePhysics::PostUpdate()
 	// You need to provide your own macro to translate meters to pixels
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 	{
+
+		//DEBUG (raycast)
+		App->renderer->DrawLine(pos1.x, pos1.y, pos2.x, pos2.y, 0, 255, 255);
+		App->renderer->DrawLine(pos2.x + (norm.x), pos2.y + (norm.y), pos2.x, pos2.y, 255, 255, 0);
+
 		for (b2JointEdge* j = b->GetJointList(); j; j = j->next)
 		{
 			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().x - 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y - 5), 255, 0, 0);
@@ -382,9 +466,17 @@ bool ModulePhysics::CleanUp()
 
 void PhysBody::GetPosition(int& x, int &y) const
 {
-	b2Vec2 pos = body->GetPosition();
-	x = METERS_TO_PIXELS(pos.x) - (width);
-	y = METERS_TO_PIXELS(pos.y) - (height);
+	b2Vec2 position = body->GetPosition();
+	if (position.x != 0 && position.y != 0)
+	{
+		x = METERS_TO_PIXELS(position.x) - (width);
+		y = METERS_TO_PIXELS(position.y) - (height);
+	}
+	else
+	{
+		x = pos.x; y = pos.y;
+	}
+	
 }
 
 float PhysBody::GetRotation() const
@@ -416,7 +508,7 @@ int PhysBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& no
 	rayInput.p2 = b2Vec2(PIXEL_TO_METERS(x2), PIXEL_TO_METERS(y2));
 	rayInput.maxFraction = 1.0f;
 	do {
-		if (fixture->GetShape()->RayCast(rayOutput, rayInput, body->GetTransform(), 1))
+		if (fixture->GetShape()->RayCast(rayOutput, rayInput, body->GetTransform(), 0))
 		{
 			normal_x = rayOutput->normal.x;
 			normal_y = rayOutput->normal.y;
@@ -426,6 +518,28 @@ int PhysBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& no
 	} while (fixture->GetNext());
 	
 	return ret;
+}
+
+void PhysBody::SetPos(int x, int y)
+{
+	pos.x = x;
+	pos.y = y;
+}
+
+bool PhysBody::Resize(float _scale)
+{
+	
+	scale = _scale;
+	body->DestroyFixture(body->GetFixtureList());
+
+	b2CircleShape shape;
+	shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS * scale);
+	b2FixtureDef fixture;
+	fixture.shape = &shape;
+	fixture.density = 0.5f;
+	body->CreateFixture(&fixture);
+
+	return true;
 }
 
 void ModulePhysics::BeginContact(b2Contact* contact)

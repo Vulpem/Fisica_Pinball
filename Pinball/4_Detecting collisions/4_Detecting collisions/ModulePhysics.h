@@ -3,6 +3,7 @@
 #include "Globals.h"
 #include "Box2D/Box2D/Box2D.h"
 
+
 #define GRAVITY_X 0.0f
 #define GRAVITY_Y 6.0f
 
@@ -18,7 +19,7 @@
 class PhysBody
 {
 public:
-	PhysBody() : body(NULL), listener(NULL), dead(false), joint(NULL), scale(1.0f)
+	PhysBody() : body(NULL), listener(NULL), dead(false), joint(NULL), scale(1.0f), pos(0.0f, 0.0f)
 	{}
 
 	~PhysBody(){
@@ -29,6 +30,8 @@ public:
 	float GetRotation() const;
 	bool Contains(int x, int y) const;
 	int RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const;
+	bool Resize(float _scale);
+	void SetPos(int x, int y);
 
 public:
 	int width, height;
@@ -37,6 +40,10 @@ public:
 	b2RevoluteJoint* joint;
 	float scale;
 	bool dead;
+
+private:
+	b2Vec2 pos;
+
 };
 
 // Module --------------------------------------
@@ -54,6 +61,7 @@ public:
 	PhysBody* CreateBall(int x, int y);
 	PhysBody* CreateChain(int* points, int size);
 	PhysBody* CreateChain(int* points, int size, float restitution);
+	PhysBody* CreatePolygon(int* points, int size);
 	PhysBody* CreateSensor(int* points, int size, float restitution);
 	PhysBody* CreateFlipper(int* points, int pivotX, int pivotY, int right);
 	PhysBody* CreateLauncher(int* points, int size, int pivotX, int pivotY);
@@ -67,5 +75,9 @@ public:
 	b2World* world;
 
 private:
+	//DEBUG
+	b2Vec2 pos1;
+	b2Vec2 pos2;
+	b2Vec2 norm;
 
 };
