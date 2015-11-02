@@ -83,6 +83,7 @@ public:
 
 	bool started;
 	int score;
+	int lastScore;
 	int lifes;
 	bool draw;
 	bool magnet;

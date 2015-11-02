@@ -27,6 +27,7 @@ bool ModuleSceneIntro::Start()
 	launcherReady = true;
 	ballLaunched = true;
 	started = false;
+	lifes = 3;
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 	background_up = App->textures->Load("pinball/bg_up.png");
@@ -78,6 +79,10 @@ bool ModuleSceneIntro::CleanUp()
 // Update: draw background
 update_status ModuleSceneIntro::Update()
 {
+	char title[50];
+	sprintf_s(title, "Lifes: %d Score: %06d Last Score: %06d", lifes, score, score);
+	App->window->SetTitle(title);
+
 	InputCommands();
 
 	ResizeBalls();
@@ -85,6 +90,19 @@ update_status ModuleSceneIntro::Update()
 	if (magnet)
 	{
 		Magnetize();
+	}
+
+	if (started && balls.count() == 0)
+	{
+		lifes--;
+		started = false;
+		ballsToAdd = 1;
+	}
+	if (lifes == 0)
+	{
+		lastScore = score;
+		score = 0;
+		lifes = 3;
 	}
 
 	Draw();
@@ -340,16 +358,20 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				found = true;
 			}
 
-			if ((bodyA == bouncyLeft || bodyA == bouncyRight) && !found)
+			if ((bodyA == bouncyLeft || bodyB == bouncyLeft) && !found)
 			{
-				App->physics->Bounce(bodyB, bodyA, 30);
+				b2Vec2 force; force.x = 20; force.y = -30;
+				App->physics->Bounce(bodyA, force);
+				App->physics->Bounce(bodyB, force);
 				found = true;
 				App->audio->PlayFx(ding_fx);
 			}
-			if ((bodyB == bouncyLeft || bodyB == bouncyRight) && !found)
+			if ((bodyA == bouncyRight || bodyB == bouncyRight) && !found)
 			{
 				App->audio->PlayFx(ding_fx);
-				App->physics->Bounce(bodyA, bodyB, 30);
+				b2Vec2 force; force.x = -20; force.y = -30;
+				App->physics->Bounce(bodyA, force);
+				App->physics->Bounce(bodyB, force);
 				found = true;
 			}
 
@@ -374,6 +396,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				{
 					if (currentLight->data->counter > 100)
 					{
+						score += currentLight->data->scoreGiven;
 						currentLight->data->lights_on++;
 						score += currentLight->data->scoreGiven;
 						currentLight->data->counter = 0;
@@ -742,6 +765,7 @@ bool ModuleSceneIntro::GenBackground()
 	};
 	lightSwitch* leftHole = new lightSwitch;
 	leftHole->extraBall = true;
+	leftHole->scoreGiven = 100;
 	leftHole->sensor = App->physics->CreateSensor(leftHolePoints, 8);
 	SDL_Rect* rect = new SDL_Rect;
 	rect->x = 181; rect->y = 336; rect->w = 54; rect->h = 42;
@@ -766,6 +790,7 @@ bool ModuleSceneIntro::GenBackground()
 	};
 	lightSwitch* rightHole = new lightSwitch;
 	rightHole->extraBall = true;
+	rightHole->scoreGiven = 100;
 	rightHole->sensor = App->physics->CreateSensor(rightHolePoints, 8);
 	rect = new SDL_Rect;
 	rect->x = 438; rect->y = 216; rect->w = 30; rect->h = 25;

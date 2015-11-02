@@ -101,6 +101,7 @@ public:
 
 	void InvertGravity();
 	void Bounce(PhysBody* movable, PhysBody* non_movable, float intensity);
+	void Bounce(PhysBody* movable, b2Vec2 force);
 
 	bool debug;
 	b2World* world;

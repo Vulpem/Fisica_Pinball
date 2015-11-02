@@ -49,7 +49,7 @@ void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float inten
 	non_movable->GetPosition(x, y);
 	non_movableCenter.x = x;
 	non_movableCenter.y = y;
-
+	force.SetZero();
 	movable->RayCast(movableCenter.x, movableCenter.y, non_movableCenter.x, non_movableCenter.y, force.x, force.y);
 	force.Normalize();
 	force *= intensity;
@@ -60,6 +60,13 @@ void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float inten
 	pos2 = non_movableCenter;
 	norm = force;
 	//////
+
+}
+
+void ModulePhysics::Bounce(PhysBody* movable, b2Vec2 force)
+{
+	
+	movable->body->ApplyForceToCenter(force, true);
 
 }
 
