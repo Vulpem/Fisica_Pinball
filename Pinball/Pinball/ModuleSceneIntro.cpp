@@ -35,7 +35,18 @@ bool ModuleSceneIntro::Start()
 	circle = App->textures->Load("pinball/ballSmall.png");
 	rFlipper = App->textures->Load("pinball/rFlipper.png");
 	lFlipper = App->textures->Load("pinball/lFlipper.png");
+
+
 	bonus_fx = App->audio->LoadFx("pinball/bonus.wav");
+	bonus2_fx = App->audio->LoadFx("pinball/bonus2.wav");
+	bonus3_fx = App->audio->LoadFx("pinball/bonus3.wav");
+	bonusLong_fx = App->audio->LoadFx("pinball/long_bonus.wav");
+	bonusLong2_fx = App->audio->LoadFx("pinball/long_bonus2.wav");
+
+	ballBounce_fx = App->audio->LoadFx("pinball/ball_bounce.wav");
+	bell_fx = App->audio->LoadFx("pinball/bell.wav");
+	ding_fx = App->audio->LoadFx("pinball/ding_short.wav");
+	flipper_fx = App->audio->LoadFx("pinball/flipper.wav");
 
 
 	ret = GenBackground();
@@ -112,9 +123,12 @@ void ModuleSceneIntro::Draw()
 			p2List_item<SDL_Rect*>* currentRect = currentLight->data->lights.getFirst();
 			for (int n = 0; n < currentLight->data->lights_on && n < currentLight->data->lights.count(); n++)
 			{
-
 				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
 				currentRect = currentRect->next;
+			}
+			if (currentLight->data->counter < 60)
+			{
+				currentLight->data->counter++;
 			}
 			currentLight = currentLight->next;
 		}
@@ -173,6 +187,10 @@ void ModuleSceneIntro::InputCommands()
 	{
 		App->physics->InvertGravity();
 	}
+	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_DOWN)
+	{
+		App->audio->PlayFx(flipper_fx);
+	}
 
 	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_REPEAT)
 	{
@@ -202,6 +220,7 @@ void ModuleSceneIntro::InputCommands()
 		b2PrismaticJoint* joint = (b2PrismaticJoint*)launcher->body->GetJointList()->joint;
 		joint->EnableMotor(true);
 		launcherCount = 0;
+		App->audio->PlayFx(bonusLong_fx);
 	}
 	else if (launcherCount < 50)
 	{
@@ -220,6 +239,10 @@ void ModuleSceneIntro::InputCommands()
 	else
 	{
 		launcherReady = true;
+	}
+	if (ballBounceCounter <= 10)
+	{
+		ballBounceCounter++;
 	}
 }
 
@@ -283,6 +306,11 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 		if (balls.find(bodyA) != -1 || balls.find(bodyB) != -1)
 		{
 			bool found = false;
+			if (started && ballBounceCounter > 10)
+			{
+				App->audio->PlayFx(ballBounce_fx);
+				ballBounceCounter = 0;
+			}
 
 			if (bodyA == lostBallZone || bodyB == lostBallZone)
 			{
@@ -299,13 +327,13 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 
 			if ((bodyA == bouncyLeft || bodyA == bouncyRight) && !found)
 			{
-				App->audio->PlayFx(bonus_fx);
 				App->physics->Bounce(bodyB, bodyA, 30);
 				found = true;
+				App->audio->PlayFx(ding_fx);
 			}
 			if ((bodyB == bouncyLeft || bodyB == bouncyRight) && !found)
 			{
-				App->audio->PlayFx(bonus_fx);
+				App->audio->PlayFx(ding_fx);
 				App->physics->Bounce(bodyA, bodyB, 30);
 				found = true;
 			}
@@ -329,14 +357,23 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			{
 				if (bodyA == currentLight->data->sensor || bodyB == currentLight->data->sensor)
 				{
-					currentLight->data->lights_on++;
-					score += currentLight->data->scoreGiven;
-					if (currentLight->data->extraBall && currentLight->data->lights.count() == currentLight->data->lights_on)
+					if (currentLight->data->counter > 50)
 					{
-						ballsToAdd++;
-						currentLight->data->lights_on = 0;
+						currentLight->data->lights_on++;
+						score += currentLight->data->scoreGiven;
+						currentLight->data->counter = 0;
+						if (currentLight->data->extraBall && currentLight->data->lights.count()+1 == currentLight->data->lights_on)
+						{
+							ballsToAdd++;
+							currentLight->data->lights_on = 0;
+						}
+						else
+						{
+							App->audio->PlayFx(bonus_fx);
+						}
 					}
 				}
+				
 				currentLight = currentLight->next;
 			}
 
@@ -705,6 +742,36 @@ bool ModuleSceneIntro::GenBackground()
 	leftHole->lights.add(rect);
 
 	lights.add(leftHole);
+
+	int rightHolePoints[8] = {
+		450, 94,
+		483, 96,
+		466, 73,
+		444, 73
+	};
+	lightSwitch* rightHole = new lightSwitch;
+	rightHole->extraBall = true;
+	rightHole->sensor = App->physics->CreateSensor(rightHolePoints, 8);
+	rect = new SDL_Rect;
+	rect->x = 438; rect->y = 216; rect->w = 30; rect->h = 25;
+	rightHole->lights.add(rect);
+	rect = new SDL_Rect;
+	rect->x = 456; rect->y = 193; rect->w = 27; rect->h = 20;
+	rightHole->lights.add(rect);
+	rect = new SDL_Rect;
+	rect->x = 465; rect->y = 173; rect->w = 25; rect->h = 20;
+	rightHole->lights.add(rect);
+	rect = new SDL_Rect;
+	rect->x = 464; rect->y = 152; rect->w = 25; rect->h = 20;
+	rightHole->lights.add(rect);
+	rect = new SDL_Rect;
+	rect->x = 461; rect->y = 134; rect->w = 25; rect->h = 20;
+	rightHole->lights.add(rect);
+	rect = new SDL_Rect;
+	rect->x = 458; rect->y = 114; rect->w = 25; rect->h = 20;
+	rightHole->lights.add(rect);
+
+	lights.add(rightHole);
 
 	return ret;
 }

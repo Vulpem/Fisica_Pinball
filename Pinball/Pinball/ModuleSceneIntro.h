@@ -9,7 +9,7 @@ class PhysBody;
 
 struct lightSwitch
 {
-	lightSwitch() { sensor = NULL; lights_on = 0; extraBall = false; scoreGiven = 0; }
+	lightSwitch() { sensor = NULL; lights_on = 0; extraBall = false; scoreGiven = 0; counter = 0; }
 	~lightSwitch()
 	{
 		p2List_item <SDL_Rect*>* item = lights.getFirst();
@@ -54,6 +54,17 @@ public:
 
 	SDL_Texture* circle;
 	uint bonus_fx;
+	uint bonus2_fx;
+	uint bonus3_fx;
+	uint bonusLong_fx;
+	uint bonusLong2_fx;
+
+	uint ballBounce_fx;
+	uint bell_fx;
+	uint ding_fx;
+	uint flipper_fx;
+
+	int ballBounceCounter;
 
 	int launcherCount;
 	PhysBody* launcher;
