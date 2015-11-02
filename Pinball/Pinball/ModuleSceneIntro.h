@@ -54,7 +54,7 @@ public:
 	SDL_Texture* lFlipper;
 
 	SDL_Texture* ball;
-	uint bonus_fx;
+	uint bonus1_fx;
 	uint bonus2_fx;
 	uint bonus3_fx;
 	uint bonusLong_fx;
@@ -74,6 +74,8 @@ public:
 	PhysBody* lostBallZone;
 	PhysBody* bouncyRight;
 	PhysBody* bouncyLeft;
+	p2DynArray<PhysBody*> OrangeBouncers;
+
 	p2List<activableBodies> activable;
 	p2List<lightSwitch*> lights;
 

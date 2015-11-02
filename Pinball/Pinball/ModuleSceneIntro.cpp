@@ -39,9 +39,9 @@ bool ModuleSceneIntro::Start()
 	circleTexture = App->textures->Load("pinball/circle.png");
 
 
-	bonus_fx = App->audio->LoadFx("pinball/bonus.wav");
-	bonus2_fx = App->audio->LoadFx("pinball/bonus2.wav");
-	bonus3_fx = App->audio->LoadFx("pinball/bonus3.wav");
+	bonus1_fx = App->audio->LoadFx("pinball/bonus.wav");
+	bonus2_fx = App->audio->LoadFx("pinball/bonus1.wav");
+	bonus3_fx = App->audio->LoadFx("pinball/bonus2.wav");
 	bonusLong_fx = App->audio->LoadFx("pinball/long_bonus.wav");
 	bonusLong2_fx = App->audio->LoadFx("pinball/long_bonus2.wav");
 
@@ -336,7 +336,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 {
 	if (bodyB && bodyA)
 	{
-		if (balls.find(bodyA) != -1 || balls.find(bodyB) != -1)
+		if (balls.find(bodyA) != -1 /*|| balls.find(bodyB) != -1*/)
 		{
 			bool found = false;
 			if (started && ballBounceCounter > 10)
@@ -345,20 +345,20 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				ballBounceCounter = 0;
 			}
 
-			if (bodyA == lostBallZone || bodyB == lostBallZone)
+			if (/*bodyA == lostBallZone || */bodyB == lostBallZone)
 			{
 				if (balls.find(bodyA) != -1)
 				{
 					bodyA->dead = true;
 				}
-				else if (balls.find(bodyB) != -1)
+				/*else if (balls.find(bodyB) != -1)
 				{
 					bodyB->dead = true;
-				}
+				}*/
 				found = true;
 			}
 
-			if ((bodyA == bouncyLeft || bodyB == bouncyLeft) && !found)
+			if ((/*bodyA == bouncyLeft || */bodyB == bouncyLeft) && !found)
 			{
 				b2Vec2 force; force.x = 20; force.y = -30;
 				App->physics->Bounce(bodyA, force);
@@ -366,7 +366,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				found = true;
 				App->audio->PlayFx(ding_fx);
 			}
-			if ((bodyA == bouncyRight || bodyB == bouncyRight) && !found)
+			if ((/*bodyA == bouncyRight ||*/ bodyB == bouncyRight) && !found)
 			{
 				App->audio->PlayFx(ding_fx);
 				b2Vec2 force; force.x = -20; force.y = -30;
@@ -374,15 +374,21 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				App->physics->Bounce(bodyB, force);
 				found = true;
 			}
+			
+			if (bodyB == OrangeBouncers[0] || bodyB == OrangeBouncers[1] || bodyB == OrangeBouncers[2])
+			{
+				score += 10;
+				App->audio->PlayFx(bonus1_fx);
+			}
 
 			p2List_item<activableBodies>* item = activable.getFirst();
 			while (item && !found)
 			{
-				if (bodyA == item->data.deactivator || bodyB == item->data.deactivator)
+				if (/*bodyA == item->data.deactivator ||*/ bodyB == item->data.deactivator)
 				{
 					item->data.Deactivate();
 				}
-				if (bodyA == item->data.activator || bodyB == item->data.activator)
+				if (/*bodyA == item->data.activator ||*/ bodyB == item->data.activator)
 				{
 					item->data.Activate();
 				}
@@ -392,7 +398,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			p2List_item<lightSwitch*>* currentLight = lights.getFirst();
 			while (currentLight && !found)
 			{
-				if (bodyA == currentLight->data->sensor || bodyB == currentLight->data->sensor)
+				if (/*bodyA == currentLight->data->sensor || */bodyB == currentLight->data->sensor)
 				{
 					if (currentLight->data->counter > 100)
 					{
@@ -407,7 +413,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 						}
 						else
 						{
-							App->audio->PlayFx(bonus_fx);
+							App->audio->PlayFx(bonus3_fx);
 						}
 					}
 				}
@@ -636,7 +642,7 @@ bool ModuleSceneIntro::GenBackground()
 		319, 100,
 		306, 93
 	};
-	App->physics->CreateChain(orangeLeft, 14, 2.0f);
+	OrangeBouncers.PushBack(App->physics->CreateChain(orangeLeft, 14, 2.0f));
 
 
 	int orangeCenter[14] = {
@@ -648,7 +654,7 @@ bool ModuleSceneIntro::GenBackground()
 		355, 78,
 		342, 71
 	};
-	App->physics->CreateChain(orangeCenter, 14, 2.0f);
+	OrangeBouncers.PushBack(App->physics->CreateChain(orangeCenter, 14, 2.0f));
 
 	int orangeRight[14] = {
 		360, 100,
@@ -659,7 +665,7 @@ bool ModuleSceneIntro::GenBackground()
 		387, 100,
 		374, 93
 	};
-	App->physics->CreateChain(orangeRight, 14, 2.0f);
+	OrangeBouncers.PushBack(App->physics->CreateChain(orangeRight, 14, 2.0f));
 
 	int bottomTriangle[6] = {
 		312, 651,
@@ -756,6 +762,30 @@ bool ModuleSceneIntro::GenBackground()
 	};
 	activableBodies topLeftBody(App->physics->CreateChain(topLeftBlocker, 8), App->physics->CreateSensor(topLeftActivator, 8), App->physics->CreateSensor(topLeftDeactivator, 8));
 	activable.add(topLeftBody);
+
+	//////Activable walls
+	int topRightBlocker[8] = {
+		394, 35,
+		394, 7,
+		408, 7,
+		402, 34
+	};
+
+	int topRightDeactivator[8] = {
+		409, 33,
+		419, 7,
+		440, 8,
+		425, 33
+	};
+
+	int topRightActivator[8] = {
+		389, 35,
+		387, 8,
+		380, 7,
+		385, 35
+	};
+	activableBodies topRightBody(App->physics->CreateChain(topRightBlocker, 8), App->physics->CreateSensor(topRightActivator, 8), App->physics->CreateSensor(topRightDeactivator, 8));
+	activable.add(topRightBody);
 
 	int leftHolePoints[8] = {
 		149, 250,
