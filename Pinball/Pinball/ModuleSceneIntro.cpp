@@ -10,7 +10,7 @@
 
 ModuleSceneIntro::ModuleSceneIntro(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
-	circle = NULL;
+	ball = NULL;
 }
 
 ModuleSceneIntro::~ModuleSceneIntro()
@@ -32,9 +32,10 @@ bool ModuleSceneIntro::Start()
 	background_up = App->textures->Load("pinball/bg_up.png");
 	background_lights = App->textures->Load("pinball/bg_lights.png");
 	background = App->textures->Load("pinball/bg.png");
-	circle = App->textures->Load("pinball/ballSmall.png");
+	ball = App->textures->Load("pinball/ballSmall.png");
 	rFlipper = App->textures->Load("pinball/rFlipper.png");
 	lFlipper = App->textures->Load("pinball/lFlipper.png");
+	circleTexture = App->textures->Load("pinball/circle.png");
 
 
 	bonus_fx = App->audio->LoadFx("pinball/bonus.wav");
@@ -48,6 +49,18 @@ bool ModuleSceneIntro::Start()
 	ding_fx = App->audio->LoadFx("pinball/ding_short.wav");
 	flipper_fx = App->audio->LoadFx("pinball/flipper.wav");
 
+	SDL_Rect frame1; frame1.x = 0; frame1.y = 0; frame1.h = 40; frame1.w = 90;
+	SDL_Rect frame2(frame1); frame2.y += 40;
+	SDL_Rect frame3(frame2); frame3.y += 40;
+	SDL_Rect frame4(frame3); frame4.y += 40;
+	SDL_Rect frame5(frame4); frame5.y += 40;
+	circle.frames.PushBack(frame1);
+	circle.frames.PushBack(frame2);
+	circle.frames.PushBack(frame3);
+	circle.frames.PushBack(frame4);
+	circle.frames.PushBack(frame5);
+	circle.speed = 0.1f;
+	circle.loop = true;
 
 	ret = GenBackground();
 
@@ -126,12 +139,14 @@ void ModuleSceneIntro::Draw()
 				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
 				currentRect = currentRect->next;
 			}
-			if (currentLight->data->counter < 60)
+			if (currentLight->data->counter < 105)
 			{
 				currentLight->data->counter++;
 			}
 			currentLight = currentLight->next;
 		}
+		//Drawing circle animation
+		App->renderer->Blit(circleTexture, 290, 114, &circle.GetCurrentFrame());
 
 		//Drawing balls
 		p2List_item<PhysBody*>* c = balls.getFirst();
@@ -139,7 +154,7 @@ void ModuleSceneIntro::Draw()
 		{
 			int x, y;
 			c->data->GetPosition(x, y);
-			App->renderer->Blit(circle, x, y, NULL, 0.0f, 0, 0, 0, c->data->scale);
+			App->renderer->Blit(ball, x, y, NULL, 0.0f, 0, 0, 0, c->data->scale);
 			c = c->next;
 		}
 
@@ -357,7 +372,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			{
 				if (bodyA == currentLight->data->sensor || bodyB == currentLight->data->sensor)
 				{
-					if (currentLight->data->counter > 50)
+					if (currentLight->data->counter > 100)
 					{
 						currentLight->data->lights_on++;
 						score += currentLight->data->scoreGiven;
@@ -744,10 +759,10 @@ bool ModuleSceneIntro::GenBackground()
 	lights.add(leftHole);
 
 	int rightHolePoints[8] = {
-		450, 94,
-		483, 96,
-		466, 73,
-		444, 73
+		484, 92,
+		453, 52,
+		424, 52,
+		444, 93
 	};
 	lightSwitch* rightHole = new lightSwitch;
 	rightHole->extraBall = true;

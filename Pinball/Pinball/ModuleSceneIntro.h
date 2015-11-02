@@ -3,6 +3,7 @@
 #include "p2List.h"
 #include "p2Point.h"
 #include "Globals.h"
+#include "Animation.h"
 
 struct activableBodies;
 class PhysBody;
@@ -52,7 +53,7 @@ public:
 	SDL_Texture* rFlipper;
 	SDL_Texture* lFlipper;
 
-	SDL_Texture* circle;
+	SDL_Texture* ball;
 	uint bonus_fx;
 	uint bonus2_fx;
 	uint bonus3_fx;
@@ -75,6 +76,10 @@ public:
 	PhysBody* bouncyLeft;
 	p2List<activableBodies> activable;
 	p2List<lightSwitch*> lights;
+
+	SDL_Texture* circleTexture;
+	Animation circle;
+
 
 	bool started;
 	int score;
