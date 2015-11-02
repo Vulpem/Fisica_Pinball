@@ -4,6 +4,7 @@
 #include "p2Point.h"
 #include "Globals.h"
 
+struct activableBodies;
 class PhysBody;
 
 class ModuleSceneIntro : public Module
@@ -37,6 +38,7 @@ public:
 	PhysBody* lostBallZone;
 	PhysBody* bouncyRight;
 	PhysBody* bouncyLeft;
+	p2List<activableBodies> activable;
 
 	bool draw;
 	bool magnet;

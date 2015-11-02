@@ -46,6 +46,39 @@ private:
 
 };
 
+struct activableBodies
+{
+	PhysBody* wall;
+	PhysBody* activator;
+	PhysBody* deactivator;
+
+	bool shouldBeActive;
+
+	activableBodies(PhysBody* _wall, PhysBody* _activator, PhysBody* _deactivator)
+	{
+		wall = _wall; activator = _activator; deactivator = _deactivator;
+	}
+	activableBodies(activableBodies& _source)
+	{
+		wall = _source.wall;
+		activator = _source.activator;
+		deactivator = _source.deactivator;
+	}
+	activableBodies()
+	{
+		wall = activator = deactivator = NULL;
+	}
+
+	void Activate()
+	{
+		shouldBeActive = true;
+	}
+	void Deactivate()
+	{
+		shouldBeActive = false;
+	}
+};
+
 // Module --------------------------------------
 class ModulePhysics : public Module, public b2ContactListener
 {
@@ -62,7 +95,7 @@ public:
 	PhysBody* CreateChain(int* points, int size);
 	PhysBody* CreateChain(int* points, int size, float restitution);
 	PhysBody* CreatePolygon(int* points, int size);
-	PhysBody* CreateSensor(int* points, int size, float restitution);
+	PhysBody* CreateSensor(int* points, int size);
 	PhysBody* CreateFlipper(int* points, int pivotX, int pivotY, int right);
 	PhysBody* CreateLauncher(int* points, int size, int pivotX, int pivotY);
 

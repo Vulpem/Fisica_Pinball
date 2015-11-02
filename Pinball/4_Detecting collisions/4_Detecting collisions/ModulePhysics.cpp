@@ -230,9 +230,9 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size, float restitution)
 	return pbody;
 }
 
-PhysBody* ModulePhysics::CreateSensor(int* points, int size, float restitution)
+PhysBody* ModulePhysics::CreateSensor(int* points, int size)
 {
-	PhysBody* ret = CreateChain(points, size, restitution);
+	PhysBody* ret = CreateChain(points, size);
 	ret->body->GetFixtureList()->SetSensor(true);
 	return ret;
 }

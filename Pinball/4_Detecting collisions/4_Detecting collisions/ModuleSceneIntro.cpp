@@ -206,6 +206,20 @@ update_status ModuleSceneIntro::PostUpdate()
 		currentBall = nextBall;
 	}
 
+	p2List_item<activableBodies>* item = activable.getFirst();
+	while (item)
+	{
+		if (item->data.shouldBeActive == true && item->data.wall->body->IsActive() == false)
+		{
+			item->data.wall->body->SetActive(true);
+		}
+		else if (item->data.shouldBeActive == false && item->data.wall->body->IsActive() == true)
+		{
+			item->data.wall->body->SetActive(false);
+		}
+		item = item->next;
+	}
+
 		return UPDATE_CONTINUE;
 }
 
@@ -214,6 +228,21 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 	//App->audio->PlayFx(bonus_fx);
 	if (bodyB && bodyA)
 	{
+		p2List_item<activableBodies>* item = activable.getFirst();
+		while (item && (balls.find(bodyA) != -1 || balls.find(bodyB) != -1))
+		{
+			if (bodyA == item->data.deactivator || bodyB == item->data.deactivator)
+			{
+				item->data.Deactivate();
+			}
+			if (bodyA == item->data.activator || bodyB == item->data.activator)
+			{
+				item->data.Activate();
+			}
+			item = item->next;
+		}
+
+
 		if (bodyA == lostBallZone || bodyB == lostBallZone)
 		{
 			if (balls.find(bodyA) != -1)
@@ -527,6 +556,30 @@ bool ModuleSceneIntro::GenBackground()
 			623, 645
 		};
 		launcher = App->physics->CreateLauncher(launcherp, 8, 690, 650);
-	
+
+		//////Activable walls
+		int launcherBlocker[8] = {
+			522, 243,
+			548, 179,
+			553, 209,
+			525, 253
+		};
+
+		int launcherDeactivator[8] = {
+			533, 271,
+			568, 269,
+			570, 281,
+			532, 280
+		};
+
+		int launcherActivator[8] = {
+			503, 166,
+			538, 171,
+			533, 153,
+			503, 153
+		};
+		activableBodies body(App->physics->CreateChain(launcherBlocker, 8), App->physics->CreateSensor(launcherActivator, 8), App->physics->CreateSensor(launcherDeactivator, 8));
+		activable.add(body);
+
 		return ret;
 }
