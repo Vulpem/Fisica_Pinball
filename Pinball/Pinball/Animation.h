@@ -1,5 +1,6 @@
 #pragma once
 #include "p2DynArray.h"
+#include "ModuleRender.h"
 
 class Animation
 {

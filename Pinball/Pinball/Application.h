@@ -11,6 +11,7 @@
 #include "ModuleAudio.h"
 #include "ModulePhysics.h"
 #include "ModuleSceneIntro.h"
+#include "Animation.h"
 
 class Application
 {

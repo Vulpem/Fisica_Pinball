@@ -1,12 +1,12 @@
 #include "Globals.h"
 #include "Application.h"
-#include "ModuleRender.h"
 #include "ModuleSceneIntro.h"
 #include "ModuleInput.h"
 #include "ModuleTextures.h"
 #include "ModuleAudio.h"
 #include "ModulePhysics.h"
 #include "ModuleWindow.h"
+#include "Animation.h"
 
 ModuleSceneIntro::ModuleSceneIntro(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
@@ -23,6 +23,10 @@ bool ModuleSceneIntro::Start()
 	bool ret = true;
 	draw = true;
 	magnet = false;
+	ballsToAdd = 1;
+	launcherReady = true;
+	ballLaunched = true;
+	started = false;
 
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 	background_up = App->textures->Load("pinball/bg_up.png");
@@ -88,8 +92,8 @@ void ModuleSceneIntro::ResizeBalls()
 		App->window->GetSize(windowW, windowH);
 		float scale = (float)y / (float)windowH + 1.0f;
 
-		c->data->Resize(scale);
-		c = c->next;
+c->data->Resize(scale);
+c = c->next;
 	}
 }
 
@@ -100,6 +104,20 @@ void ModuleSceneIntro::Draw()
 	{
 		//Drawing background
 		App->renderer->Blit(background, 0, 0, NULL);
+
+		//Drawing pertinent lights
+		p2List_item<lightSwitch*>* currentLight = lights.getFirst();
+		while (currentLight)
+		{
+			p2List_item<SDL_Rect*>* currentRect = currentLight->data->lights.getFirst();
+			for (int n = 0; n < currentLight->data->lights_on && n < currentLight->data->lights.count(); n++)
+			{
+
+				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
+				currentRect = currentRect->next;
+			}
+			currentLight = currentLight->next;
+		}
 
 		//Drawing balls
 		p2List_item<PhysBody*>* c = balls.getFirst();
@@ -121,19 +139,6 @@ void ModuleSceneIntro::Draw()
 		//Background items that go above the ball
 		App->renderer->Blit(background_up, 0, 0, NULL);
 
-		p2List_item<lightSwitch*>* currentLight = lights.getFirst();
-		while (currentLight)
-		{
-			p2List_item<SDL_Rect*>* currentRect = currentLight->data->lights.getFirst();
-			for (int n = 0; n < currentLight->data->lights_on && n < currentLight->data->lights.count(); n++)
-			{
-
-				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
-				currentRect = currentRect->next;
-			}
-			currentLight = currentLight->next;
-		}
-
 	}
 }
 
@@ -141,9 +146,7 @@ void ModuleSceneIntro::InputCommands()
 {
 	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
 	{
-		PhysBody* circle = App->physics->CreateBall(640, 600);
-		balls.add(circle);
-		circle->listener = this;
+		ballsToAdd++;
 	}
 	if (App->input->GetKey(SDL_SCANCODE_2) == KEY_DOWN)
 	{
@@ -187,9 +190,15 @@ void ModuleSceneIntro::InputCommands()
 	{
 		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * 50, true);
 	}
-
 	if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN)
 	{
+		started = true;
+	}
+
+	if (launcherReady && !ballLaunched && started)
+	{
+		launcherReady = false;
+		ballLaunched = true;
 		b2PrismaticJoint* joint = (b2PrismaticJoint*)launcher->body->GetJointList()->joint;
 		joint->EnableMotor(true);
 		launcherCount = 0;
@@ -198,29 +207,30 @@ void ModuleSceneIntro::InputCommands()
 	{
 		launcherCount++;
 	}
-	else
+	else if (launcherCount == 50)
 	{
 		b2PrismaticJoint* joint = (b2PrismaticJoint*)launcher->body->GetJointList()->joint;
 		joint->EnableMotor(false);
+		launcherCount++;
+	}
+	else if (launcherCount < 100)
+	{
+		launcherCount++;
+	}
+	else
+	{
+		launcherReady = true;
 	}
 }
 
 update_status ModuleSceneIntro::PostUpdate()
 {
-	//Deleting dead balls
-	p2List_item<PhysBody*>* currentBall = balls.getFirst();
-	p2List_item<PhysBody*>* nextBall;
-	while (currentBall)
-	{
-		nextBall = currentBall->next;
-		if (currentBall->data->dead == true)
-		{
-			App->physics->world->DestroyBody(currentBall->data->body);
-			balls.del(currentBall);
-		}
-		currentBall = nextBall;
-	}
+	AddBalls();
 
+	//Deleting dead balls
+	DeleteDeadBalls();
+	
+	//Activating/deactivating activable bodies
 	p2List_item<activableBodies>* item = activable.getFirst();
 	while (item)
 	{
@@ -236,6 +246,34 @@ update_status ModuleSceneIntro::PostUpdate()
 	}
 
 	return UPDATE_CONTINUE;
+}
+
+void ModuleSceneIntro::AddBalls()
+{
+	if (ballsToAdd > 0 && launcherReady && ballLaunched)
+	{
+		PhysBody* circle = App->physics->CreateBall(640, 600);
+		balls.add(circle);
+		circle->listener = this;
+		ballsToAdd--;
+		ballLaunched = false;
+	}
+}
+
+void ModuleSceneIntro::DeleteDeadBalls()
+{
+	p2List_item<PhysBody*>* currentBall = balls.getFirst();
+	p2List_item<PhysBody*>* nextBall;
+	while (currentBall)
+	{
+		nextBall = currentBall->next;
+		if (currentBall->data->dead == true)
+		{
+			App->physics->world->DestroyBody(currentBall->data->body);
+			balls.del(currentBall);
+		}
+		currentBall = nextBall;
+	}
 }
 
 void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
@@ -292,13 +330,12 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				if (bodyA == currentLight->data->sensor || bodyB == currentLight->data->sensor)
 				{
 					currentLight->data->lights_on++;
-					//score += currentLight->data.scoreGiven;
-					/*if (currentLight->data->extraBall && currentLight->data->lights.count() == currentLight->data->lights_on)
+					score += currentLight->data->scoreGiven;
+					if (currentLight->data->extraBall && currentLight->data->lights.count() == currentLight->data->lights_on)
 					{
-					PhysBody* circle = App->physics->CreateBall(640, 600);
-					balls.add(circle);
-					circle->listener = this;
-					}*/
+						ballsToAdd++;
+						currentLight->data->lights_on = 0;
+					}
 				}
 				currentLight = currentLight->next;
 			}
