@@ -79,12 +79,23 @@ bool ModuleSceneIntro::CleanUp()
 {
 	LOG("Unloading Intro scene");
 
-	p2List_item<lightSwitch*>* item = lights.getFirst();
-	if (item->data)
+	p2List_item<PhysBody*>* currentBall = balls.getFirst();
+	
+	while (currentBall)
 	{
-		delete item->data;
+		delete currentBall->data;
+		currentBall = currentBall->next;
 	}
 
+	p2List_item<lightSwitch*>* item = lights.getFirst();
+	while (item)
+	{
+		if (item->data)
+		{
+				delete item->data;
+		}
+		item = item->next;
+	}
 	return true;
 }
 
@@ -160,8 +171,8 @@ void ModuleSceneIntro::LoadAssets()
 
 void ModuleSceneIntro::SetTitle()
 {
-	char title[50];
-	sprintf_s(title, "Lifes: %d Score: %06d Last Score: %06d", lifes, score, lastScore);
+	char title[64];
+	sprintf_s(title, "Score: %06d Last Score: %06d, Highest score: %06d", score, lastScore);
 	App->window->SetTitle(title);
 }
 
@@ -205,7 +216,7 @@ update_status ModuleSceneIntro::InputCommands()
 	}
 
 	//DEBUGGING INPUT COMMANDS
-	if (App->input->GetMouseButtonDown(1) == KEY_DOWN)
+	/*if (App->input->GetMouseButtonDown(1) == KEY_DOWN)
 	{
 		p2List_item<PhysBody*>* item = balls.getFirst();
 		while (item)
@@ -220,7 +231,7 @@ update_status ModuleSceneIntro::InputCommands()
 	if (App->input->GetMouseButtonDown(1) == KEY_UP)
 	{
 		App->physics->DeleteMouseJoint();
-	}
+	}*/
 
 	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
 	{

@@ -27,7 +27,6 @@ struct lightSwitch
 	int lights_on;
 	int scoreGiven;
 	bool extraBall;
-	p2List_item<PhysBody*>* ball;
 	int counter;
 };
 
