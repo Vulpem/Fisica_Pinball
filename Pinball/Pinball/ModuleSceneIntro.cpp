@@ -96,6 +96,7 @@ void ModuleSceneIntro::LoadAssets()
 	background_up = App->textures->Load("pinball/bg_up.png");
 	background_lights = App->textures->Load("pinball/bg_lights.png");
 	background = App->textures->Load("pinball/bg.png");
+	help = App->textures->Load("pinball/help.png");
 	ball = App->textures->Load("pinball/ballSmall.png");
 	rFlipper = App->textures->Load("pinball/rFlipper.png");
 	lFlipper = App->textures->Load("pinball/lFlipper.png");
@@ -275,7 +276,7 @@ void ModuleSceneIntro::Magnetize()
 	{
 		int x, y;
 		c->data->GetPosition(x, y);
-		b2Vec2 force((App->input->GetMouseX() - x) / 50.0f, (App->input->GetMouseY() - y) / 50.0f);
+		b2Vec2 force((App->input->GetMouseX() - x) / 10.0f, (App->input->GetMouseY() - y) / 10.0f);
 		c->data->body->ApplyForceToCenter(force, true);
 		c = c->next;
 	}
@@ -452,7 +453,10 @@ void ModuleSceneIntro::Draw()
 			}
 		}
 
+		
+
 	}
+	App->renderer->Blit(help, 0, 0, NULL);
 }
 
 void ModuleSceneIntro::Texts()

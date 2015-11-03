@@ -68,6 +68,7 @@ public:
 	SDL_Texture* background_up;
 	SDL_Texture* background;
 	SDL_Texture* background_lights;
+	SDL_Texture* help;
 	SDL_Texture* rFlipper;
 	SDL_Texture* lFlipper;
 	SDL_Texture* orange_bump;
