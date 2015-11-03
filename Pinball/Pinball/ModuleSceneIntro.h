@@ -52,6 +52,7 @@ public:
 	SDL_Texture* background_lights;
 	SDL_Texture* rFlipper;
 	SDL_Texture* lFlipper;
+	SDL_Texture* orange_bump;
 
 	SDL_Texture* ball;
 	uint bonus1_fx;
@@ -82,7 +83,7 @@ public:
 	SDL_Texture* circleTexture;
 	Animation circle;
 
-
+	int bounceCounters[3];
 	bool started;
 	int score;
 	int lastScore;
@@ -93,6 +94,7 @@ public:
 	int ballsToAdd;
 	bool launcherReady;
 	bool ballLaunched;
+	int saveBallCounter;
 
 private:
 	void InputCommands();

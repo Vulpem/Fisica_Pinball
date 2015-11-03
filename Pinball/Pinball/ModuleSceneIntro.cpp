@@ -37,6 +37,7 @@ bool ModuleSceneIntro::Start()
 	rFlipper = App->textures->Load("pinball/rFlipper.png");
 	lFlipper = App->textures->Load("pinball/lFlipper.png");
 	circleTexture = App->textures->Load("pinball/circle.png");
+	orange_bump = App->textures->Load("pinball/orange_bump.png");
 
 
 	bonus1_fx = App->audio->LoadFx("pinball/bonus.wav");
@@ -94,9 +95,17 @@ update_status ModuleSceneIntro::Update()
 
 	if (started && balls.count() == 0)
 	{
-		lifes--;
-		started = false;
-		ballsToAdd = 1;
+		if (saveBallCounter < 550)
+		{
+			ballsToAdd++;
+			saveBallCounter = 0;
+		}
+		else
+		{
+			lifes--;
+			started = false;
+			ballsToAdd = 1;
+		}
 	}
 	if (lifes == 0)
 	{
@@ -146,6 +155,13 @@ void ModuleSceneIntro::Draw()
 	{
 		//Drawing background
 		App->renderer->Blit(background, 0, 0, NULL);
+		if (saveBallCounter < 550)
+		{
+			saveBallCounter++;
+			SDL_Rect rect;
+			rect.x = 310; rect.y = 540; rect.w = 30; rect.h = 40;
+			App->renderer->Blit(background_lights, rect.x, rect.y, &rect);
+		}
 
 		//Drawing pertinent lights
 		p2List_item<lightSwitch*>* currentLight = lights.getFirst();
@@ -185,6 +201,20 @@ void ModuleSceneIntro::Draw()
 
 		//Background items that go above the ball
 		App->renderer->Blit(background_up, 0, 0, NULL);
+
+		for (int n = 0; n < 3; n++)
+		{
+			if (bounceCounters[n] < 10)
+			{
+				bounceCounters[n]++;
+				switch (n)
+				{
+				case 0: {	App->renderer->Blit(orange_bump, 285, 66, NULL); break; }
+				case 1: {	App->renderer->Blit(orange_bump, 320, 43, NULL); break; }
+				case 2: {	App->renderer->Blit(orange_bump, 354, 66, NULL); break; }
+				}
+			}
+		}
 
 	}
 }
@@ -241,9 +271,13 @@ void ModuleSceneIntro::InputCommands()
 	{
 		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * 50, true);
 	}
-	if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN)
+	if (!started)
 	{
-		started = true;
+		if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_DOWN) == KEY_DOWN)
+		{
+			started = true;
+			saveBallCounter = 0;
+		}
 	}
 
 	if (launcherReady && !ballLaunched && started)
@@ -375,8 +409,24 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				found = true;
 			}
 			
-			if (bodyB == OrangeBouncers[0] || bodyB == OrangeBouncers[1] || bodyB == OrangeBouncers[2])
+			if (bodyB == OrangeBouncers[0])
 			{
+				bounceCounters[0] = 0;
+				App->renderer->Blit(orange_bump, 285, 66, NULL);
+				score += 10;
+				App->audio->PlayFx(bonus1_fx);
+			}
+			if (bodyB == OrangeBouncers[1])
+			{
+				bounceCounters[1] = 0;
+				App->renderer->Blit(orange_bump, 320, 43, NULL);
+				score += 10;
+				App->audio->PlayFx(bonus1_fx);
+			}
+			if (bodyB == OrangeBouncers[2])
+			{
+				bounceCounters[2] = 0;
+				App->renderer->Blit(orange_bump, 354, 66, NULL);
 				score += 10;
 				App->audio->PlayFx(bonus1_fx);
 			}
