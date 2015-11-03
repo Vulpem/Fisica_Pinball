@@ -15,7 +15,7 @@
 ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app, start_enabled), b2ContactListener()
 {
 	world = NULL;
-	debug = true;
+	debug = false;
 }
 
 // Destructor
@@ -140,6 +140,20 @@ update_status ModulePhysics::PostUpdate()
 bool ModulePhysics::CleanUp()
 {
 	LOG("Destroying physics world");
+	//Erasing al PhysBodies
+	b2Body* currentItem = world->GetBodyList();
+	p2DynArray<PhysBody*> toDelete;
+	for (int n = 0; n < world->GetBodyCount(); n++)
+	{
+		toDelete.PushBack((PhysBody*)currentItem->GetUserData());
+		currentItem = currentItem->GetNext();
+	}
+	while (toDelete.Count() > 0)
+	{
+		PhysBody* del;
+		toDelete.Pop(del);
+		delete del;
+	}
 
 	// Delete the whole physics world!
 	delete world;
@@ -208,7 +222,7 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size)
 
 	b->CreateFixture(&fixture);
 
-	delete p;
+	delete[] p;
 
 
 	pbody->body = b;
@@ -255,7 +269,7 @@ PhysBody* ModulePhysics::CreatePolygon(int* points, int size)
 
 	b->CreateFixture(&fixture);
 
-	delete p;
+	delete[] p;
 
 
 	pbody->body = b;
@@ -298,7 +312,7 @@ PhysBody* ModulePhysics::CreateChain(int* points, int size, float restitution)
 	fixture.restitution = restitution;
 	b->CreateFixture(&fixture);
 
-	delete p;
+	delete[] p;
 
 
 	pbody->body = b;
@@ -370,7 +384,7 @@ PhysBody* ModulePhysics::CreateFlipper(int* points, int pivotX, int pivotY, int 
 	joint.type = e_revoluteJoint;
 	pbody->joint = (b2RevoluteJoint*)world->CreateJoint(&joint);
 
-	delete p;
+	delete[] p;
 
 	return pbody;
 }
@@ -407,7 +421,7 @@ PhysBody* ModulePhysics::CreateLauncher(int* points, int size, int pivotX, int p
 	fixture.density = 1.0f;
 	b->SetGravityScale(10);
 	b->CreateFixture(&fixture);
-	delete p;
+	delete[] p;
 	pbody->body = b;
 	pbody->width = pbody->height = 0;
 

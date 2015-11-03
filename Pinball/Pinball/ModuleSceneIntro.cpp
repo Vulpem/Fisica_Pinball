@@ -16,7 +16,6 @@ ModuleSceneIntro::ModuleSceneIntro(Application* app, bool start_enabled) : Modul
 ModuleSceneIntro::~ModuleSceneIntro()
 {}
 
-// Load assets
 bool ModuleSceneIntro::Start()
 {
 	LOG("Loading Intro assets");
@@ -29,6 +28,67 @@ bool ModuleSceneIntro::Start()
 	started = false;
 	lifes = 3;
 
+	LoadAssets();
+
+	GenBackground();
+
+	return ret;
+}
+
+// Update
+update_status ModuleSceneIntro::Update()
+{
+	SetTitle();
+	
+	InputCommands();
+
+	ManageLostBalls();
+
+	ManageLauncher();
+
+	ResizeBalls();
+
+	if (magnet)
+	{
+		Magnetize();
+	}
+
+	Draw();
+
+	return UPDATE_CONTINUE;
+}
+
+// Post Update
+update_status ModuleSceneIntro::PostUpdate()
+{
+	AddBalls();
+
+	//Deleting dead balls
+	DeleteDeadBalls();
+
+	//Activating/deactivating activable bodies
+	ManageActivableBodies();
+
+	return UPDATE_CONTINUE;
+}
+
+bool ModuleSceneIntro::CleanUp()
+{
+	LOG("Unloading Intro scene");
+
+	p2List_item<lightSwitch*>* item = lights.getFirst();
+	if (item->data)
+	{
+		delete item->data;
+	}
+
+	return true;
+}
+
+/////////////////////////
+
+void ModuleSceneIntro::LoadAssets()
+{
 	App->renderer->camera.x = App->renderer->camera.y = 0;
 	background_up = App->textures->Load("pinball/bg_up.png");
 	background_lights = App->textures->Load("pinball/bg_lights.png");
@@ -63,36 +123,112 @@ bool ModuleSceneIntro::Start()
 	circle.frames.PushBack(frame5);
 	circle.speed = 0.1f;
 	circle.loop = true;
-
-	ret = GenBackground();
-
-	return ret;
 }
 
-// Load assets
-bool ModuleSceneIntro::CleanUp()
-{
-	LOG("Unloading Intro scene");
-
-	return true;
-}
-
-// Update: draw background
-update_status ModuleSceneIntro::Update()
+void ModuleSceneIntro::SetTitle()
 {
 	char title[50];
 	sprintf_s(title, "Lifes: %d Score: %06d Last Score: %06d", lifes, score, lastScore);
 	App->window->SetTitle(title);
+}
 
-	InputCommands();
-
-	ResizeBalls();
-
-	if (magnet)
+void ModuleSceneIntro::InputCommands()
+{
+	//GAME INPUT COMMANDS
+	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_DOWN)
 	{
-		Magnetize();
+		App->audio->PlayFx(flipper_fx);
 	}
 
+	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_REPEAT)
+	{
+		rightFlipper->body->ApplyAngularImpulse(DEGTORAD * 150, true);
+	}
+	else
+	{
+		rightFlipper->body->ApplyAngularImpulse(DEGTORAD * -50, true);
+	}
+
+	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_REPEAT)
+	{
+		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * -150, true);
+	}
+	else
+	{
+		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * 50, true);
+	}
+
+	if (!started)
+	{
+		if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_DOWN) == KEY_DOWN)
+		{
+			started = true;
+			saveBallCounter = 0;
+		}
+	}
+
+	//DEBUGGING INPUT COMMANDS
+	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
+	{
+		ballsToAdd++;
+	}
+	if (App->input->GetKey(SDL_SCANCODE_2) == KEY_DOWN)
+	{
+		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
+		balls.add(circle);
+		circle->listener = this;
+	}
+	if (App->input->GetKey(SDL_SCANCODE_3) == KEY_REPEAT)
+	{
+		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
+		balls.add(circle);
+		circle->listener = this;
+	}
+	if (App->input->GetKey(SDL_SCANCODE_F2) == KEY_DOWN)
+	{
+		draw = !draw;
+	}
+	if (App->input->GetKey(SDL_SCANCODE_F3) == KEY_DOWN)
+	{
+		magnet = !magnet;
+	}
+	if (App->input->GetKey(SDL_SCANCODE_F4) == KEY_DOWN)
+	{
+		App->physics->InvertGravity();
+	}
+}
+
+void ModuleSceneIntro::ResizeBalls()
+{
+	p2List_item<PhysBody*>* c = balls.getFirst();
+	while (c != NULL)
+	{
+		int x, y;
+		int windowW, windowH;
+		c->data->GetPosition(x, y);
+		App->window->GetSize(windowW, windowH);
+		float scale = (float)y / (float)windowH + 1.0f;
+
+		c->data->Resize(scale);
+		c = c->next;
+	}
+}
+
+void ModuleSceneIntro::Magnetize()
+{
+	p2List_item<PhysBody*>* c = balls.getFirst();
+	while (c != NULL && magnet)
+	{
+		int x, y;
+		c->data->GetPosition(x, y);
+		b2Vec2 force((App->input->GetMouseX() - x) / 50.0f, (App->input->GetMouseY() - y) / 50.0f);
+		c->data->body->ApplyForceToCenter(force, true);
+		c = c->next;
+	}
+}
+
+void ModuleSceneIntro::ManageLostBalls()
+{
 	if (started && balls.count() == 0)
 	{
 		if (saveBallCounter < 550)
@@ -110,176 +246,21 @@ update_status ModuleSceneIntro::Update()
 	if (lifes == 0)
 	{
 		lastScore = score;
+		ballsToAdd = 1;
 		score = 0;
 		lifes = 3;
-	}
-
-	Draw();
-
-	return UPDATE_CONTINUE;
-}
-
-void ModuleSceneIntro::Magnetize()
-{
-	p2List_item<PhysBody*>* c = balls.getFirst();
-	while (c != NULL && magnet)
-	{
-		int x, y;
-		c->data->GetPosition(x, y);
-		b2Vec2 force((App->input->GetMouseX() - x) / 50.0f, (App->input->GetMouseY() - y) / 50.0f);
-		c->data->body->ApplyForceToCenter(force, true);
-		c = c->next;
-	}
-}
-
-void ModuleSceneIntro::ResizeBalls()
-{
-	p2List_item<PhysBody*>* c = balls.getFirst();
-	while (c != NULL)
-	{
-		int x, y;
-		int windowW, windowH;
-		c->data->GetPosition(x, y);
-		App->window->GetSize(windowW, windowH);
-		float scale = (float)y / (float)windowH + 1.0f;
-
-c->data->Resize(scale);
-c = c->next;
-	}
-}
-
-void ModuleSceneIntro::Draw()
-{
-	// All draw functions ------------------------------------------------------
-	if (draw)
-	{
-		//Drawing background
-		App->renderer->Blit(background, 0, 0, NULL);
-		if (saveBallCounter < 550)
-		{
-			saveBallCounter++;
-			SDL_Rect rect;
-			rect.x = 310; rect.y = 540; rect.w = 30; rect.h = 40;
-			App->renderer->Blit(background_lights, rect.x, rect.y, &rect);
-		}
-
-		//Drawing pertinent lights
+		//Turning off all lights that were switched on during the game
 		p2List_item<lightSwitch*>* currentLight = lights.getFirst();
 		while (currentLight)
 		{
-			p2List_item<SDL_Rect*>* currentRect = currentLight->data->lights.getFirst();
-			for (int n = 0; n < currentLight->data->lights_on && n < currentLight->data->lights.count(); n++)
-			{
-				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
-				currentRect = currentRect->next;
-			}
-			if (currentLight->data->counter < 105)
-			{
-				currentLight->data->counter++;
-			}
+			currentLight->data->lights_on = 0;
 			currentLight = currentLight->next;
 		}
-		//Drawing circle animation
-		App->renderer->Blit(circleTexture, 290, 114, &circle.GetCurrentFrame());
-
-		//Drawing balls
-		p2List_item<PhysBody*>* c = balls.getFirst();
-		while (c != NULL)
-		{
-			int x, y;
-			c->data->GetPosition(x, y);
-			App->renderer->Blit(ball, x, y, NULL, 0.0f, 0, 0, 0, c->data->scale);
-			c = c->next;
-		}
-
-		int x; int y;
-		rightFlipper->GetPosition(x, y);
-		App->renderer->Blit(rFlipper, x - 79, y - 10, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle(), 79, 10);
-
-		leftFlipper->GetPosition(x, y);
-		App->renderer->Blit(lFlipper, x - 14, y - 9, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle(), 14, 9);
-
-		//Background items that go above the ball
-		App->renderer->Blit(background_up, 0, 0, NULL);
-
-		for (int n = 0; n < 3; n++)
-		{
-			if (bounceCounters[n] < 10)
-			{
-				bounceCounters[n]++;
-				switch (n)
-				{
-				case 0: {	App->renderer->Blit(orange_bump, 285, 66, NULL); break; }
-				case 1: {	App->renderer->Blit(orange_bump, 320, 43, NULL); break; }
-				case 2: {	App->renderer->Blit(orange_bump, 354, 66, NULL); break; }
-				}
-			}
-		}
-
 	}
 }
 
-void ModuleSceneIntro::InputCommands()
+void ModuleSceneIntro::ManageLauncher()
 {
-	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
-	{
-		ballsToAdd++;
-	}
-	if (App->input->GetKey(SDL_SCANCODE_2) == KEY_DOWN)
-	{
-		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
-		balls.add(circle);
-		circle->listener = this;
-	}
-	if (App->input->GetKey(SDL_SCANCODE_3) == KEY_REPEAT)
-	{
-
-		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
-		balls.add(circle);
-		circle->listener = this;
-	}
-	if (App->input->GetKey(SDL_SCANCODE_F2) == KEY_DOWN)
-	{
-		draw = !draw;
-	}
-	if (App->input->GetKey(SDL_SCANCODE_F3) == KEY_DOWN)
-	{
-		magnet = !magnet;
-	}
-	if (App->input->GetKey(SDL_SCANCODE_F4) == KEY_DOWN)
-	{
-		App->physics->InvertGravity();
-	}
-	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_DOWN)
-	{
-		App->audio->PlayFx(flipper_fx);
-	}
-
-	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_REPEAT)
-	{
-		rightFlipper->body->ApplyAngularImpulse(DEGTORAD * 150, true);
-	}
-	else
-	{
-		rightFlipper->body->ApplyAngularImpulse(DEGTORAD * -50, true);
-	}
-	if (App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_REPEAT)
-	{
-		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * -150, true);
-	}
-	else
-	{
-		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * 50, true);
-	}
-	if (!started)
-	{
-		if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_DOWN) == KEY_DOWN)
-		{
-			started = true;
-			saveBallCounter = 0;
-		}
-	}
-
 	if (launcherReady && !ballLaunched && started)
 	{
 		launcherReady = false;
@@ -313,14 +294,8 @@ void ModuleSceneIntro::InputCommands()
 	}
 }
 
-update_status ModuleSceneIntro::PostUpdate()
+void ModuleSceneIntro::ManageActivableBodies()
 {
-	AddBalls();
-
-	//Deleting dead balls
-	DeleteDeadBalls();
-	
-	//Activating/deactivating activable bodies
 	p2List_item<activableBodies>* item = activable.getFirst();
 	while (item)
 	{
@@ -342,9 +317,84 @@ update_status ModuleSceneIntro::PostUpdate()
 		item->data.toActivate = false;
 		item = item->next;
 	}
-
-	return UPDATE_CONTINUE;
 }
+
+void ModuleSceneIntro::Draw()
+{
+	// All draw functions ------------------------------------------------------
+	if (draw)
+	{
+		//Drawing background
+		App->renderer->Blit(background, 0, 0, NULL);
+
+		//Drawing "Save Ball" light
+		if (saveBallCounter < 550)
+		{
+			saveBallCounter++;
+			SDL_Rect rect;
+			rect.x = 310; rect.y = 540; rect.w = 30; rect.h = 40;
+			App->renderer->Blit(background_lights, rect.x, rect.y, &rect);
+		}
+
+		//Drawing pertinent lights
+		p2List_item<lightSwitch*>* currentLight = lights.getFirst();
+		while (currentLight)
+		{
+			p2List_item<SDL_Rect*>* currentRect = currentLight->data->lights.getFirst();
+			for (int n = 0; n < currentLight->data->lights_on && n < currentLight->data->lights.count(); n++)
+			{
+				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
+				currentRect = currentRect->next;
+			}
+			if (currentLight->data->counter < 105)
+			{
+				currentLight->data->counter++;
+			}
+			currentLight = currentLight->next;
+		}
+
+		//Drawing circle animation
+		App->renderer->Blit(circleTexture, 290, 114, &circle.GetCurrentFrame());
+
+		//Drawing balls
+		p2List_item<PhysBody*>* c = balls.getFirst();
+		while (c != NULL)
+		{
+			int x, y;
+			c->data->GetPosition(x, y);
+			App->renderer->Blit(ball, x, y, NULL, 0.0f, 0, 0, 0, c->data->scale);
+			c = c->next;
+		}
+
+		//Drawing Flippers
+		int x; int y;
+		rightFlipper->GetPosition(x, y);
+		App->renderer->Blit(rFlipper, x - 79, y - 10, NULL, 0.0f, RADTODEG * rightFlipper->body->GetAngle(), 79, 10);
+
+		leftFlipper->GetPosition(x, y);
+		App->renderer->Blit(lFlipper, x - 14, y - 9, NULL, 0.0f, RADTODEG * leftFlipper->body->GetAngle(), 14, 9);
+
+		//Background items that go above the ball
+		App->renderer->Blit(background_up, 0, 0, NULL);
+
+		for (int n = 0; n < 3; n++)
+		{
+			if (bounceCounters[n] < 10)
+			{
+				bounceCounters[n]++;
+				switch (n)
+				{
+				case 0: {	App->renderer->Blit(orange_bump, 285, 66, NULL); break; }
+				case 1: {	App->renderer->Blit(orange_bump, 320, 43, NULL); break; }
+				case 2: {	App->renderer->Blit(orange_bump, 354, 66, NULL); break; }
+				}
+			}
+		}
+
+	}
+}
+
+
 
 void ModuleSceneIntro::AddBalls()
 {
@@ -378,15 +428,18 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 {
 	if (bodyB && ball)
 	{
+		//Making sure one of the colliding objects is a ball
 		if (balls.find(ball) != -1)
 		{
 			bool found = false;
+			//Play the sound of the ball bounce, but not too often
 			if (started && ballBounceCounter > 10)
 			{
 				App->audio->PlayFx(ballBounce_fx);
 				ballBounceCounter = 0;
 			}
 
+			//Marking the balls dead if necessary
 			if (bodyB == lostBallZone)
 			{
 				if (balls.find(ball) != -1)
@@ -396,11 +449,11 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 				found = true;
 			}
 
+			//Bottom triangle bouncers. Playing the sound and applying the correspondant force
 			if ((bodyB == bouncyLeft) && !found)
 			{
 				b2Vec2 force; force.x = 20; force.y = -50;
 				App->physics->Bounce(ball, force);
-				App->physics->Bounce(bodyB, force);
 				found = true;
 				App->audio->PlayFx(ding_fx);
 			}
@@ -409,32 +462,30 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 				App->audio->PlayFx(ding_fx);
 				b2Vec2 force; force.x = -20; force.y = -50;
 				App->physics->Bounce(ball, force);
-				App->physics->Bounce(bodyB, force);
 				found = true;
 			}
 			
+			//Top orange bouncers. Starting the counter for the convenient graphics, playing the sound
 			if (bodyB == OrangeBouncers[0])
 			{
 				bounceCounters[0] = 0;
-				App->renderer->Blit(orange_bump, 285, 66, NULL);
 				score += 10;
 				App->audio->PlayFx(bonus1_fx);
 			}
 			if (bodyB == OrangeBouncers[1])
 			{
 				bounceCounters[1] = 0;
-				App->renderer->Blit(orange_bump, 320, 43, NULL);
 				score += 10;
 				App->audio->PlayFx(bonus1_fx);
 			}
 			if (bodyB == OrangeBouncers[2])
 			{
 				bounceCounters[2] = 0;
-				App->renderer->Blit(orange_bump, 354, 66, NULL);
 				score += 10;
 				App->audio->PlayFx(bonus1_fx);
 			}
 
+			//Checking for activator-deactivator sensors
 			p2List_item<activableBodies>* item = activable.getFirst();
 			while (item && !found)
 			{
@@ -449,6 +500,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 				item = item->next;
 			}
 
+			//Checking for any light sensors pressed
 			p2List_item<lightSwitch*>* currentLight = lights.getFirst();
 			while (currentLight && !found)
 			{
@@ -458,10 +510,10 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 					{
 						score += currentLight->data->scoreGiven;
 						currentLight->data->lights_on++;
-						score += currentLight->data->scoreGiven;
 						currentLight->data->counter = 0;
 						if (currentLight->data->extraBall && currentLight->data->lights.count()+1 == currentLight->data->lights_on)
 						{
+							//Resetting lights and adding an extra ball if necessary
 							ballsToAdd++;
 							currentLight->data->lights_on = 0;
 						}
@@ -471,14 +523,15 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 						}
 					}
 				}
-				
 				currentLight = currentLight->next;
 			}
-
-		}
-	}
+		} // end of if (find.ball != -1)
+	} // end of if( bodyB && ball)
 }
 
+
+
+//Keep minimized whenever possible, chaos down there!
 bool ModuleSceneIntro::GenBackground()
 {
 	bool ret = true;
@@ -897,6 +950,13 @@ bool ModuleSceneIntro::GenBackground()
 	rightHole->lights.add(rect);
 
 	lights.add(rightHole);
+
+	int miniLightLeftP[8] = {
+		310, 55,
+		310, 25,
+		327, 25,
+		327, 55
+	};
 
 	return ret;
 }

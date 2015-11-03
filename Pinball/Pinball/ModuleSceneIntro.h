@@ -41,8 +41,25 @@ public:
 	update_status Update();
 	update_status PostUpdate();
 	bool CleanUp();
+
 	void OnCollision(PhysBody* bodyA, PhysBody* bodyB);
+
+private:
+	void LoadAssets();
 	bool GenBackground();
+
+	void SetTitle();
+	void InputCommands();
+	void ResizeBalls();
+	void Magnetize();
+	void ManageLostBalls();
+	void ManageLauncher();
+	void ManageActivableBodies();
+
+	void Draw();
+
+	void AddBalls();
+	void DeleteDeadBalls();
 
 public:
 	p2List<PhysBody*> balls;
@@ -95,13 +112,5 @@ public:
 	bool launcherReady;
 	bool ballLaunched;
 	int saveBallCounter;
-
-private:
-	void InputCommands();
-	void ResizeBalls();
-	void Draw();
-	void Magnetize();
-	void AddBalls();
-	void DeleteDeadBalls();
 
 };
