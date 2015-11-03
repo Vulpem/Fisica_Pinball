@@ -33,43 +33,6 @@ bool ModulePhysics::Start()
 
 	return true;
 }
-
-void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float intensity)
-{
-	b2Vec2 force;
-	b2Vec2 movableCenter;
-	b2Vec2 non_movableCenter;
-
-	int x, y;
-	movable->GetPosition(x, y);
-
-	movableCenter.x = x;
-	movableCenter.y = y;
-
-	non_movable->GetPosition(x, y);
-	non_movableCenter.x = x;
-	non_movableCenter.y = y;
-	force.SetZero();
-	movable->RayCast(movableCenter.x, movableCenter.y, non_movableCenter.x, non_movableCenter.y, force.x, force.y);
-	force.Normalize();
-	force *= intensity;
-	movable->body->ApplyForceToCenter(force, true);
-
-	//DEBUG
-	pos1 = movableCenter;
-	pos2 = non_movableCenter;
-	norm = force;
-	//////
-
-}
-
-void ModulePhysics::Bounce(PhysBody* movable, b2Vec2 force)
-{
-	
-	movable->body->ApplyForceToCenter(force, true);
-
-}
-
 // 
 update_status ModulePhysics::PreUpdate()
 {
@@ -77,6 +40,113 @@ update_status ModulePhysics::PreUpdate()
 
 	return UPDATE_CONTINUE;
 }
+
+update_status ModulePhysics::PostUpdate()
+{
+
+	if (App->input->GetKey(SDL_SCANCODE_F1) == KEY_DOWN)
+		debug = !debug;
+
+	if (!debug)
+		return UPDATE_CONTINUE;
+
+	// Bonus code: this will iterate all objects in the world and draw the circles
+	// You need to provide your own macro to translate meters to pixels
+	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
+	{
+
+		//DEBUG (raycast)
+		App->renderer->DrawLine(pos1.x, pos1.y, pos2.x, pos2.y, 0, 255, 255);
+		App->renderer->DrawLine(pos2.x + (norm.x), pos2.y + (norm.y), pos2.x, pos2.y, 255, 255, 0);
+
+		for (b2JointEdge* j = b->GetJointList(); j; j = j->next)
+		{
+			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().x - 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y - 5), 255, 0, 0);
+			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x - 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().x + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y - 5), 255, 0, 0);
+			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x), METERS_TO_PIXELS(j->joint->GetAnchorA().y), METERS_TO_PIXELS(j->joint->GetAnchorB().x), METERS_TO_PIXELS(j->joint->GetAnchorB().y), 6, 255, 0, 0);
+		}
+		for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
+		{
+			switch (f->GetType())
+			{
+				// Draw circles ------------------------------------------------
+			case b2Shape::e_circle:
+			{
+									  b2CircleShape* shape = (b2CircleShape*)f->GetShape();
+									  b2Vec2 pos = f->GetBody()->GetPosition();
+									  App->renderer->DrawCircle(METERS_TO_PIXELS(pos.x), METERS_TO_PIXELS(pos.y), METERS_TO_PIXELS(shape->m_radius), 255, 255, 255);
+			}
+				break;
+
+				// Draw polygons ------------------------------------------------
+			case b2Shape::e_polygon:
+			{
+									   b2PolygonShape* polygonShape = (b2PolygonShape*)f->GetShape();
+									   int32 count = polygonShape->GetVertexCount();
+									   b2Vec2 prev, v;
+
+									   for (int32 i = 0; i < count; ++i)
+									   {
+										   v = b->GetWorldPoint(polygonShape->GetVertex(i));
+										   if (i > 0)
+											   App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 255, 100, 100);
+
+										   prev = v;
+									   }
+
+									   v = b->GetWorldPoint(polygonShape->GetVertex(0));
+									   App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 255, 100, 100);
+			}
+				break;
+
+				// Draw chains contour -------------------------------------------
+			case b2Shape::e_chain:
+			{
+									 b2ChainShape* shape = (b2ChainShape*)f->GetShape();
+									 b2Vec2 prev, v;
+
+									 for (int32 i = 0; i < shape->m_count; ++i)
+									 {
+										 v = b->GetWorldPoint(shape->m_vertices[i]);
+										 if (i > 0)
+											 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
+										 prev = v;
+									 }
+
+									 v = b->GetWorldPoint(shape->m_vertices[0]);
+									 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
+			}
+				break;
+
+				// Draw a single segment(edge) ----------------------------------
+			case b2Shape::e_edge:
+			{
+									b2EdgeShape* shape = (b2EdgeShape*)f->GetShape();
+									b2Vec2 v1, v2;
+
+									v1 = b->GetWorldPoint(shape->m_vertex0);
+									v1 = b->GetWorldPoint(shape->m_vertex1);
+									App->renderer->DrawLine(METERS_TO_PIXELS(v1.x), METERS_TO_PIXELS(v1.y), METERS_TO_PIXELS(v2.x), METERS_TO_PIXELS(v2.y), 100, 100, 255);
+			}
+				break;
+			}
+		}
+	}
+
+	return UPDATE_CONTINUE;
+}
+
+// Called before quitting
+bool ModulePhysics::CleanUp()
+{
+	LOG("Destroying physics world");
+
+	// Delete the whole physics world!
+	delete world;
+
+	return true;
+}
+
 
 PhysBody* ModulePhysics::CreateBall(int x, int y)
 {
@@ -364,112 +434,6 @@ PhysBody* ModulePhysics::CreateLauncher(int* points, int size, int pivotX, int p
 }
 
 // 
-update_status ModulePhysics::PostUpdate()
-{
-
-	if (App->input->GetKey(SDL_SCANCODE_F1) == KEY_DOWN)
-		debug = !debug;
-
-	if (!debug)
-		return UPDATE_CONTINUE;
-
-	// Bonus code: this will iterate all objects in the world and draw the circles
-	// You need to provide your own macro to translate meters to pixels
-	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
-	{
-
-		//DEBUG (raycast)
-		App->renderer->DrawLine(pos1.x, pos1.y, pos2.x, pos2.y, 0, 255, 255);
-		App->renderer->DrawLine(pos2.x + (norm.x), pos2.y + (norm.y), pos2.x, pos2.y, 255, 255, 0);
-
-		for (b2JointEdge* j = b->GetJointList(); j; j = j->next)
-		{
-			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().x - 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y - 5), 255, 0, 0);
-			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x - 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().x + 5), METERS_TO_PIXELS(j->joint->GetAnchorA().y - 5), 255, 0, 0);
-			App->renderer->DrawLine(METERS_TO_PIXELS(j->joint->GetAnchorA().x), METERS_TO_PIXELS(j->joint->GetAnchorA().y), METERS_TO_PIXELS(j->joint->GetAnchorB().x), METERS_TO_PIXELS(j->joint->GetAnchorB().y), 6, 255, 0, 0);
-		}
-		for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
-		{
-			switch (f->GetType())
-			{
-				// Draw circles ------------------------------------------------
-			case b2Shape::e_circle:
-			{
-				b2CircleShape* shape = (b2CircleShape*)f->GetShape();
-				b2Vec2 pos = f->GetBody()->GetPosition();
-				App->renderer->DrawCircle(METERS_TO_PIXELS(pos.x), METERS_TO_PIXELS(pos.y), METERS_TO_PIXELS(shape->m_radius), 255, 255, 255);
-			}
-			break;
-
-			// Draw polygons ------------------------------------------------
-			case b2Shape::e_polygon:
-			{
-				b2PolygonShape* polygonShape = (b2PolygonShape*)f->GetShape();
-				int32 count = polygonShape->GetVertexCount();
-				b2Vec2 prev, v;
-
-				for (int32 i = 0; i < count; ++i)
-				{
-					v = b->GetWorldPoint(polygonShape->GetVertex(i));
-					if (i > 0)
-						App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 255, 100, 100);
-
-					prev = v;
-				}
-
-				v = b->GetWorldPoint(polygonShape->GetVertex(0));
-				App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 255, 100, 100);
-			}
-			break;
-
-			// Draw chains contour -------------------------------------------
-			case b2Shape::e_chain:
-			{
-				b2ChainShape* shape = (b2ChainShape*)f->GetShape();
-				b2Vec2 prev, v;
-
-				for (int32 i = 0; i < shape->m_count; ++i)
-				{
-					v = b->GetWorldPoint(shape->m_vertices[i]);
-					if (i > 0)
-						App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
-					prev = v;
-				}
-
-				v = b->GetWorldPoint(shape->m_vertices[0]);
-				App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
-			}
-			break;
-
-			// Draw a single segment(edge) ----------------------------------
-			case b2Shape::e_edge:
-			{
-				b2EdgeShape* shape = (b2EdgeShape*)f->GetShape();
-				b2Vec2 v1, v2;
-
-				v1 = b->GetWorldPoint(shape->m_vertex0);
-				v1 = b->GetWorldPoint(shape->m_vertex1);
-				App->renderer->DrawLine(METERS_TO_PIXELS(v1.x), METERS_TO_PIXELS(v1.y), METERS_TO_PIXELS(v2.x), METERS_TO_PIXELS(v2.y), 100, 100, 255);
-			}
-			break;
-			}
-		}
-	}
-
-	return UPDATE_CONTINUE;
-}
-
-
-// Called before quitting
-bool ModulePhysics::CleanUp()
-{
-	LOG("Destroying physics world");
-
-	// Delete the whole physics world!
-	delete world;
-
-	return true;
-}
 
 void ModulePhysics::BeginContact(b2Contact* contact)
 {
@@ -493,3 +457,40 @@ void ModulePhysics::InvertGravity()
 	world->SetGravity(gravity);
 
 }
+
+void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float intensity)
+{
+	b2Vec2 force;
+	b2Vec2 movableCenter;
+	b2Vec2 non_movableCenter;
+
+	int x, y;
+	movable->GetPosition(x, y);
+
+	movableCenter.x = x;
+	movableCenter.y = y;
+
+	non_movable->GetPosition(x, y);
+	non_movableCenter.x = x;
+	non_movableCenter.y = y;
+	force.SetZero();
+	movable->RayCast(movableCenter.x, movableCenter.y, non_movableCenter.x, non_movableCenter.y, force.x, force.y);
+	force.Normalize();
+	force *= intensity;
+	movable->body->ApplyForceToCenter(force, true);
+
+	//DEBUG
+	pos1 = movableCenter;
+	pos2 = non_movableCenter;
+	norm = force;
+	//////
+
+}
+
+void ModulePhysics::Bounce(PhysBody* movable, b2Vec2 force)
+{
+
+	movable->body->ApplyForceToCenter(force, true);
+
+}
+

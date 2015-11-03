@@ -76,16 +76,18 @@ void PhysBody::SetPos(int x, int y)
 
 bool PhysBody::Resize(float _scale)
 {
+	if (abs(scale - _scale) > 0.05)
+	{
+		scale = _scale;
+		body->DestroyFixture(body->GetFixtureList());
 
-	scale = _scale;
-	body->DestroyFixture(body->GetFixtureList());
-
-	b2CircleShape shape;
-	shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS * scale);
-	b2FixtureDef fixture;
-	fixture.shape = &shape;
-	fixture.density = 0.5f;
-	body->CreateFixture(&fixture);
+		b2CircleShape shape;
+		shape.m_radius = PIXEL_TO_METERS(BALL_RADIUS * scale);
+		b2FixtureDef fixture;
+		fixture.shape = &shape;
+		fixture.density = 0.5f;
+		body->CreateFixture(&fixture);
+	}
 
 	return true;
 }

@@ -50,7 +50,8 @@ struct activableBodies
 	PhysBody* activator;
 	PhysBody* deactivator;
 
-	bool shouldBeActive;
+	bool toActivate;
+	bool toDeactivate;
 
 	activableBodies(PhysBody* _wall, PhysBody* _activator, PhysBody* _deactivator)
 	{
@@ -69,11 +70,11 @@ struct activableBodies
 
 	void Activate()
 	{
-		shouldBeActive = true;
+		toActivate = true;
 	}
 	void Deactivate()
 	{
-		shouldBeActive = false;
+		toDeactivate = true;
 	}
 };
 

@@ -324,14 +324,22 @@ update_status ModuleSceneIntro::PostUpdate()
 	p2List_item<activableBodies>* item = activable.getFirst();
 	while (item)
 	{
-		if (item->data.shouldBeActive == true && item->data.wall->body->IsActive() == false)
+		if (item->data.toDeactivate == true)
 		{
-			item->data.wall->body->SetActive(true);
+			if (item->data.wall->body->IsActive() == true)
+			{
+				item->data.wall->body->SetActive(false);
+			}
 		}
-		else if (item->data.shouldBeActive == false && item->data.wall->body->IsActive() == true)
+		else if (item->data.toActivate == true)
 		{
-			item->data.wall->body->SetActive(false);
+			if (item->data.wall->body->IsActive() == false)
+			{
+				item->data.wall->body->SetActive(true);
+			}
 		}
+		item->data.toDeactivate = false;
+		item->data.toActivate = false;
 		item = item->next;
 	}
 
@@ -366,11 +374,11 @@ void ModuleSceneIntro::DeleteDeadBalls()
 	}
 }
 
-void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
+void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 {
-	if (bodyB && bodyA)
+	if (bodyB && ball)
 	{
-		if (balls.find(bodyA) != -1 /*|| balls.find(bodyB) != -1*/)
+		if (balls.find(ball) != -1)
 		{
 			bool found = false;
 			if (started && ballBounceCounter > 10)
@@ -379,32 +387,28 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 				ballBounceCounter = 0;
 			}
 
-			if (/*bodyA == lostBallZone || */bodyB == lostBallZone)
+			if (bodyB == lostBallZone)
 			{
-				if (balls.find(bodyA) != -1)
+				if (balls.find(ball) != -1)
 				{
-					bodyA->dead = true;
+					ball->dead = true;
 				}
-				/*else if (balls.find(bodyB) != -1)
-				{
-					bodyB->dead = true;
-				}*/
 				found = true;
 			}
 
-			if ((/*bodyA == bouncyLeft || */bodyB == bouncyLeft) && !found)
+			if ((bodyB == bouncyLeft) && !found)
 			{
 				b2Vec2 force; force.x = 20; force.y = -50;
-				App->physics->Bounce(bodyA, force);
+				App->physics->Bounce(ball, force);
 				App->physics->Bounce(bodyB, force);
 				found = true;
 				App->audio->PlayFx(ding_fx);
 			}
-			if ((/*bodyA == bouncyRight ||*/ bodyB == bouncyRight) && !found)
+			if ((bodyB == bouncyRight) && !found)
 			{
 				App->audio->PlayFx(ding_fx);
 				b2Vec2 force; force.x = -20; force.y = -50;
-				App->physics->Bounce(bodyA, force);
+				App->physics->Bounce(ball, force);
 				App->physics->Bounce(bodyB, force);
 				found = true;
 			}
@@ -434,11 +438,11 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			p2List_item<activableBodies>* item = activable.getFirst();
 			while (item && !found)
 			{
-				if (/*bodyA == item->data.deactivator ||*/ bodyB == item->data.deactivator)
+				if (bodyB == item->data.deactivator)
 				{
 					item->data.Deactivate();
 				}
-				if (/*bodyA == item->data.activator ||*/ bodyB == item->data.activator)
+				if (bodyB == item->data.activator)
 				{
 					item->data.Activate();
 				}
@@ -448,7 +452,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			p2List_item<lightSwitch*>* currentLight = lights.getFirst();
 			while (currentLight && !found)
 			{
-				if (/*bodyA == currentLight->data->sensor || */bodyB == currentLight->data->sensor)
+				if (bodyB == currentLight->data->sensor)
 				{
 					if (currentLight->data->counter > 100)
 					{
@@ -498,7 +502,7 @@ bool ModuleSceneIntro::GenBackground()
 		488, 43,
 		502, 58,
 		510, 86,
-		662, 648,
+		668, 648,
 		700, 648,
 		543, 0,
 		154, 0,
@@ -645,8 +649,8 @@ bool ModuleSceneIntro::GenBackground()
 	int miniRight[10] = {
 		365, 40,
 		362, 42,
-		362, 55,
-		369, 55,
+		362, 50,
+		369, 50,
 		369, 44
 	};
 	App->physics->CreateChain(miniRight, 10);
@@ -654,8 +658,8 @@ bool ModuleSceneIntro::GenBackground()
 	int miniLeft[10] = {
 		332, 40,
 		329, 42,
-		329, 55,
-		336, 55,
+		329, 50,
+		336, 50,
 		336, 44
 	};
 	App->physics->CreateChain(miniLeft, 10);
@@ -674,11 +678,11 @@ bool ModuleSceneIntro::GenBackground()
 		260, 129,
 		267, 67,
 		306, 56,
-		307, 39,
-		264, 40,
-		251, 44,
-		233, 50,
-		216, 67,
+		307, 40,
+		264, 46,
+		251, 48,
+		233, 54,
+		220, 63,
 		205, 139
 	};
 	App->physics->CreateChain(rampZone, 38);
@@ -774,11 +778,12 @@ bool ModuleSceneIntro::GenBackground()
 	};
 
 	int launcherDeactivator[8] = {
-		533, 271,
-		568, 269,
-		570, 281,
-		532, 280
+	533, 271,
+	568, 269,
+	553, 190,
+	525, 245
 	};
+
 
 	int launcherActivator[8] = {
 		503, 166,
@@ -798,10 +803,10 @@ bool ModuleSceneIntro::GenBackground()
 	};
 
 	int topLeftDeactivator[8] = {
-		283, 32,
-		277, 9,
-		259, 11,
-		266, 35
+		270, 32,
+		270, 9,
+		295, 14,
+		296, 32
 	};
 
 	int topLeftActivator[8] = {
@@ -822,10 +827,10 @@ bool ModuleSceneIntro::GenBackground()
 	};
 
 	int topRightDeactivator[8] = {
-		409, 33,
-		419, 7,
-		440, 8,
-		425, 33
+		430, 33,
+		430, 7,
+		404, 7,
+		398, 34
 	};
 
 	int topRightActivator[8] = {
