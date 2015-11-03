@@ -101,6 +101,7 @@ void ModuleSceneIntro::LoadAssets()
 	circleTexture = App->textures->Load("pinball/circle.png");
 	orange_bump = App->textures->Load("pinball/orange_bump.png");
 	text = App->textures->Load("pinball/text.png");
+//	reds = App->textures->Load("pinball/Reds.png");
 
 
 	bonus1_fx = App->audio->LoadFx("pinball/bonus.wav");
@@ -127,6 +128,15 @@ void ModuleSceneIntro::LoadAssets()
 	circle.speed = 0.1f;
 	circle.loop = true;
 
+	SDL_Rect LED;
+	SDL_Rect NULLRECT;
+	LED.x = 423; LED.y = 92; LED.w = 36; LED.h = 30;
+	NULLRECT.x = 0; NULLRECT.y = 0; NULLRECT.w = 0; NULLRECT.y = 0;
+	BlackBoxLed.frames.PushBack(LED);
+	BlackBoxLed.frames.PushBack(NULLRECT);
+	BlackBoxLed.loop = true;
+	BlackBoxLed.speed = 0.005f;
+
 	texts[0].h = 84;
 	texts[0].w = 154;
 	texts[0].x = 0;
@@ -136,7 +146,14 @@ void ModuleSceneIntro::LoadAssets()
 	texts[5] = texts[3] = texts[1];
 	texts[2].y = texts[3].y = 84;
 	texts[4].y = texts[5].y = 168;
-
+	/*
+	//Pos = 390 x 100
+	redsRect[0].x = 0; redsRect[0].y = 578; redsRect[0].w = 64; redsRect[0].h = 72;
+	redsRect[3] = redsRect[2] = redsRect[1] = redsRect[0];
+	redsRect[1].x = 64;
+	redsRect[2].x = 128;
+	redsRect[3].x = 192;
+	*/
 }
 
 void ModuleSceneIntro::SetTitle()
@@ -254,6 +271,7 @@ void ModuleSceneIntro::ManageLostBalls()
 		else
 		{
 			lifes--;
+			App->audio->PlayFx(bell_fx);
 			started = false;
 			ballsToAdd = 1;
 		}
@@ -372,6 +390,7 @@ void ModuleSceneIntro::Draw()
 
 		//Drawing circle animation
 		App->renderer->Blit(circleTexture, 290, 114, &circle.GetCurrentFrame());
+		
 
 		//Drawing balls
 		p2List_item<PhysBody*>* c = balls.getFirst();
@@ -393,6 +412,8 @@ void ModuleSceneIntro::Draw()
 
 		//Background items that go above the ball
 		App->renderer->Blit(background_up, 0, 0, NULL);
+
+		App->renderer->Blit(background_lights, 423, 92, &BlackBoxLed.GetCurrentFrame());
 
 		for (int n = 0; n < 3; n++)
 		{
@@ -1028,13 +1049,181 @@ bool ModuleSceneIntro::GenBackground()
 
 	lights.add(rightHole);
 
-	//MINI LEFT LIGHT
-	int miniLightLeftP[8] = {
-		310, 55,
-		310, 25,
-		327, 25,
-		327, 55
+	//FAN LEFT
+	int fanLeftP[8] = {
+		333, 233,
+		286, 233,
+		286, 240,
+		333, 240
 	};
+	lightSwitch* fanLeft = new lightSwitch;
+	fanLeft->scoreGiven = 20;
+	fanLeft->sensor = App->physics->CreateSensor(fanLeftP, 8);
+	rect = new SDL_Rect;
+	rect->x = 290; rect->y = 250; rect->w = 40; rect->h = 30;
+	fanLeft->lights.add(rect);
+
+	lights.add(fanLeft);
+
+	//FAN RIGHT
+	int fanRightP[8] = {
+		333, 233,
+		379, 233,
+		378, 240,
+		333, 240
+	};
+	lightSwitch* fanRight = new lightSwitch;
+	fanRight->scoreGiven = 20;
+	fanRight->sensor = App->physics->CreateSensor(fanRightP, 8);
+	rect = new SDL_Rect;
+	rect->x = 340; rect->y = 250; rect->w = 40; rect->h = 30;
+	fanRight->lights.add(rect);
+
+	lights.add(fanRight);
+
+	//LEFT RAMP
+	int leftRampP[8] = {
+		206, 130,
+		169, 130,
+		168, 118,
+		210, 118
+	};
+	lightSwitch* leftRamp = new lightSwitch;
+	leftRamp->scoreGiven = 20;
+	leftRamp->sensor = App->physics->CreateSensor(leftRampP, 8);
+	rect = new SDL_Rect;
+	rect->x = 175; rect->y = 197; rect->w = 40; rect->h = 30;
+	leftRamp->lights.add(rect);
+
+	lights.add(leftRamp);
+
+	//RIGHT RAMP
+	int rightRampP[8] = {
+		524, 245,
+		482, 224,
+		476, 236,
+		522, 253
+	};
+	lightSwitch* rightRamp = new lightSwitch;
+	rightRamp->scoreGiven = 20;
+	rightRamp->sensor = App->physics->CreateSensor(rightRampP, 8);
+	rect = new SDL_Rect;
+	rect->x = 461; rect->y = 253; rect->w = 40; rect->h = 30;
+	rightRamp->lights.add(rect);
+
+	lights.add(rightRamp);
+
+	//MINI LEFT LIGHT
+	int miniLeftLightP[8] = {
+		313, 45,
+		313, 53,
+		322, 53,
+		322, 45
+	};
+	lightSwitch* miniLeftLight = new lightSwitch;
+	miniLeftLight->scoreGiven = 20;
+	miniLeftLight->sensor = App->physics->CreateSensor(miniLeftLightP, 8);
+	rect = new SDL_Rect;
+	rect->x = 305; rect->y = 23; rect->w = 30; rect->h = 20;
+	miniLeftLight->lights.add(rect);
+
+	lights.add(miniLeftLight);
+
+	//MINI MID LIGHT
+	int miniMidLightP[8] = {
+		343, 45,
+		343, 52,
+		354, 52,
+		354, 45
+	};
+	lightSwitch* miniMidLight = new lightSwitch;
+	miniMidLight->scoreGiven = 20;
+	miniMidLight->sensor = App->physics->CreateSensor(miniMidLightP, 8);
+	rect = new SDL_Rect;
+	rect->x = 337; rect->y = 23; rect->w = 30; rect->h = 20;
+	miniMidLight->lights.add(rect);
+
+	lights.add(miniMidLight);
+
+	//MINI RIGHT LIGHT
+	int miniRightLightP[8] = {
+		374, 45,
+		374, 53,
+		388, 53,
+		388, 44
+	};
+	lightSwitch* miniRightLight = new lightSwitch;
+	miniRightLight->scoreGiven = 20;
+	miniRightLight->sensor = App->physics->CreateSensor(miniRightLightP, 8);
+	rect = new SDL_Rect;
+	rect->x = 367; rect->y = 23; rect->w = 30; rect->h = 20;
+	miniRightLight->lights.add(rect);
+
+	lights.add(miniRightLight);
+
+	//RED1 LIGHT
+	int red1P[8] = {
+		439, 160,
+		435, 160,
+		438, 164,
+		443, 164
+	};
+	lightSwitch* red1 = new lightSwitch;
+	red1->scoreGiven = 20;
+	red1->sensor = App->physics->CreateSensor(red1P, 8);
+	rect = new SDL_Rect;
+	rect->x = 415; rect->y = 156; rect->w = 25; rect->h = 15;
+	red1->lights.add(rect);
+
+	lights.add(red1);
+
+	//RED2 LIGHT
+	int red2P[8] = {
+		430, 147,
+		425, 147,
+		428, 152,
+		433, 152
+	};
+	lightSwitch* red2 = new lightSwitch;
+	red2->scoreGiven = 20;
+	red2->sensor = App->physics->CreateSensor(red2P, 8);
+	rect = new SDL_Rect;
+	rect->x = 409; rect->y = 146; rect->w = 25; rect->h = 15;
+	red2->lights.add(rect);
+
+	lights.add(red2);
+
+	//RED3 LIGHT
+	int red3P[8] = {
+		423, 135,
+		419, 135,
+		421, 139,
+		425, 139
+	};
+	lightSwitch* red3 = new lightSwitch;
+	red3->scoreGiven = 20;
+	red3->sensor = App->physics->CreateSensor(red3P, 8);
+	rect = new SDL_Rect;
+	rect->x = 400; rect->y = 132; rect->w = 25; rect->h = 15;
+	red3->lights.add(rect);
+
+	lights.add(red3);
+
+	//RED4 LIGHT
+	int red4P[8] = {
+		415, 123,
+		410, 123,
+		412, 127,
+		418, 127
+	};
+	lightSwitch* red4 = new lightSwitch;
+	red4->scoreGiven = 20;
+	red4->sensor = App->physics->CreateSensor(red4P, 8);
+	rect = new SDL_Rect;
+	rect->x = 393; rect->y = 120; rect->w = 25; rect->h = 15;
+	red4->lights.add(rect);
+
+	lights.add(red4);
 
 
 #pragma endregion

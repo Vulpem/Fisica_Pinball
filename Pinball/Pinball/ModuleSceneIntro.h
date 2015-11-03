@@ -71,6 +71,7 @@ public:
 	SDL_Texture* rFlipper;
 	SDL_Texture* lFlipper;
 	SDL_Texture* orange_bump;
+	//SDL_Rect redsRect[4];
 	SDL_Texture* text;
 	SDL_Rect texts[6];
 
@@ -104,6 +105,7 @@ public:
 
 	SDL_Texture* circleTexture;
 	Animation circle;
+	Animation BlackBoxLed;
 
 	int bounceCounters[3];
 	bool started;

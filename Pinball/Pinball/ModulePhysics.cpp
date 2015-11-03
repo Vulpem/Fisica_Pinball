@@ -104,17 +104,34 @@ update_status ModulePhysics::PostUpdate()
 			{
 									 b2ChainShape* shape = (b2ChainShape*)f->GetShape();
 									 b2Vec2 prev, v;
-
-									 for (int32 i = 0; i < shape->m_count; ++i)
+									 if (f->IsSensor())
 									 {
-										 v = b->GetWorldPoint(shape->m_vertices[i]);
-										 if (i > 0)
-											 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
-										 prev = v;
-									 }
+										 for (int32 i = 0; i < shape->m_count; ++i)
+										 {
 
-									 v = b->GetWorldPoint(shape->m_vertices[0]);
-									 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
+											 v = b->GetWorldPoint(shape->m_vertices[i]);
+											 if (i > 0)
+												 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 255, 100, 255);
+											 prev = v;
+										 }
+
+										 v = b->GetWorldPoint(shape->m_vertices[0]);
+										 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 255, 100, 255);
+									 }
+									 else
+									 {
+										 for (int32 i = 0; i < shape->m_count; ++i)
+										 {
+
+											 v = b->GetWorldPoint(shape->m_vertices[i]);
+											 if (i > 0)
+												 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
+											 prev = v;
+										 }
+
+										 v = b->GetWorldPoint(shape->m_vertices[0]);
+										 App->renderer->DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y), METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), 100, 255, 100);
+									 }
 			}
 				break;
 
