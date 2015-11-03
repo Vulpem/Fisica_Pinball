@@ -80,7 +80,7 @@ bool ModuleSceneIntro::CleanUp()
 update_status ModuleSceneIntro::Update()
 {
 	char title[50];
-	sprintf_s(title, "Lifes: %d Score: %06d Last Score: %06d", lifes, score, score);
+	sprintf_s(title, "Lifes: %d Score: %06d Last Score: %06d", lifes, score, lastScore);
 	App->window->SetTitle(title);
 
 	InputCommands();
@@ -360,7 +360,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 
 			if ((/*bodyA == bouncyLeft || */bodyB == bouncyLeft) && !found)
 			{
-				b2Vec2 force; force.x = 20; force.y = -30;
+				b2Vec2 force; force.x = 20; force.y = -50;
 				App->physics->Bounce(bodyA, force);
 				App->physics->Bounce(bodyB, force);
 				found = true;
@@ -369,7 +369,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
 			if ((/*bodyA == bouncyRight ||*/ bodyB == bouncyRight) && !found)
 			{
 				App->audio->PlayFx(ding_fx);
-				b2Vec2 force; force.x = -20; force.y = -30;
+				b2Vec2 force; force.x = -20; force.y = -50;
 				App->physics->Bounce(bodyA, force);
 				App->physics->Bounce(bodyB, force);
 				found = true;
@@ -472,8 +472,8 @@ bool ModuleSceneIntro::GenBackground()
 	int rightStick[12] = {
 		436, 556,
 		544, 511,
-		521, 387,
-		515, 386,
+		521, 395,
+		515, 395,
 		536, 505,
 		434, 552
 	};
@@ -482,8 +482,8 @@ bool ModuleSceneIntro::GenBackground()
 	int leftStick[12] = {
 		210, 556,
 		108, 507,
-		138, 387,
-		143, 387,
+		138, 395,
+		143, 395,
 		116, 502,
 		218, 552
 	};
@@ -755,10 +755,10 @@ bool ModuleSceneIntro::GenBackground()
 	};
 
 	int topLeftActivator[8] = {
-		306, 38,
-		320, 13,
-		333, 14,
-		313, 42
+		316, 38,
+		330, 13,
+		343, 14,
+		323, 42
 	};
 	activableBodies topLeftBody(App->physics->CreateChain(topLeftBlocker, 8), App->physics->CreateSensor(topLeftActivator, 8), App->physics->CreateSensor(topLeftDeactivator, 8));
 	activable.add(topLeftBody);
@@ -779,10 +779,10 @@ bool ModuleSceneIntro::GenBackground()
 	};
 
 	int topRightActivator[8] = {
-		389, 35,
-		387, 8,
-		380, 7,
-		385, 35
+		379, 35,
+		377, 8,
+		370, 7,
+		375, 35
 	};
 	activableBodies topRightBody(App->physics->CreateChain(topRightBlocker, 8), App->physics->CreateSensor(topRightActivator, 8), App->physics->CreateSensor(topRightDeactivator, 8));
 	activable.add(topRightBody);
