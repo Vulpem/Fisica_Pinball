@@ -172,7 +172,7 @@ void ModuleSceneIntro::LoadAssets()
 void ModuleSceneIntro::SetTitle()
 {
 	char title[64];
-	sprintf_s(title, "Score: %06d Last Score: %06d, Highest score: %06d", score, lastScore);
+	sprintf_s(title, "Score: %06d Last Score: %06d", score, lastScore);
 	App->window->SetTitle(title);
 }
 
@@ -236,18 +236,21 @@ update_status ModuleSceneIntro::InputCommands()
 	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
 	{
 		ballsToAdd++;
+		saveBallCounter = SAVE_BALL_TIMER;
 	}
 	if (App->input->GetKey(SDL_SCANCODE_2) == KEY_DOWN)
 	{
 		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
 		balls.add(circle);
 		circle->listener = this;
+		saveBallCounter = SAVE_BALL_TIMER;
 	}
 	if (App->input->GetKey(SDL_SCANCODE_3) == KEY_REPEAT)
 	{
 		PhysBody* circle = App->physics->CreateBall(App->input->GetMouseX(), App->input->GetMouseY());
 		balls.add(circle);
 		circle->listener = this;
+		saveBallCounter = SAVE_BALL_TIMER;
 	}
 	if (App->input->GetKey(SDL_SCANCODE_F2) == KEY_DOWN)
 	{
