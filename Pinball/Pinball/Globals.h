@@ -30,3 +30,18 @@ enum update_status
 #define WIN_FULLSCREEN_DESKTOP false
 #define VSYNC true
 #define TITLE "Super Amazing Pinball"
+
+//Adjustments
+#define GRAVITY_X 0.0f
+#define GRAVITY_Y 6.0f
+
+#define BALL_RADIUS 8
+
+#define SAVE_BALL_TIMER 550
+
+#define BALL_BOUNCE_SOUND_TIMER 10
+
+#define LIGHT_ACTIVATION_SPACING 100
+
+#define BUMPER_FORCE_X 20
+#define BUMPER_FORCE_Y 50

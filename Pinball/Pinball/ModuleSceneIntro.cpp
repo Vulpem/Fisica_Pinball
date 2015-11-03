@@ -231,7 +231,7 @@ void ModuleSceneIntro::ManageLostBalls()
 {
 	if (started && balls.count() == 0)
 	{
-		if (saveBallCounter < 550)
+		if (saveBallCounter < SAVE_BALL_TIMER)
 		{
 			ballsToAdd++;
 			saveBallCounter = 0;
@@ -288,7 +288,7 @@ void ModuleSceneIntro::ManageLauncher()
 	{
 		launcherReady = true;
 	}
-	if (ballBounceCounter <= 10)
+	if (ballBounceCounter <= BALL_BOUNCE_SOUND_TIMER)
 	{
 		ballBounceCounter++;
 	}
@@ -328,7 +328,7 @@ void ModuleSceneIntro::Draw()
 		App->renderer->Blit(background, 0, 0, NULL);
 
 		//Drawing "Save Ball" light
-		if (saveBallCounter < 550)
+		if (saveBallCounter < SAVE_BALL_TIMER)
 		{
 			saveBallCounter++;
 			SDL_Rect rect;
@@ -346,7 +346,7 @@ void ModuleSceneIntro::Draw()
 				App->renderer->Blit(background_lights, currentRect->data->x, currentRect->data->y, currentRect->data);
 				currentRect = currentRect->next;
 			}
-			if (currentLight->data->counter < 105)
+			if (currentLight->data->counter < LIGHT_ACTIVATION_SPACING + 1)
 			{
 				currentLight->data->counter++;
 			}
@@ -433,7 +433,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 		{
 			bool found = false;
 			//Play the sound of the ball bounce, but not too often
-			if (started && ballBounceCounter > 10)
+			if (started && ballBounceCounter > BALL_BOUNCE_SOUND_TIMER)
 			{
 				App->audio->PlayFx(ballBounce_fx);
 				ballBounceCounter = 0;
@@ -452,7 +452,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 			//Bottom triangle bouncers. Playing the sound and applying the correspondant force
 			if ((bodyB == bouncyLeft) && !found)
 			{
-				b2Vec2 force; force.x = 20; force.y = -50;
+				b2Vec2 force; force.x = BUMPER_FORCE_X; force.y = -BUMPER_FORCE_Y;
 				App->physics->Bounce(ball, force);
 				found = true;
 				App->audio->PlayFx(ding_fx);
@@ -460,7 +460,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 			if ((bodyB == bouncyRight) && !found)
 			{
 				App->audio->PlayFx(ding_fx);
-				b2Vec2 force; force.x = -20; force.y = -50;
+				b2Vec2 force; force.x = -BUMPER_FORCE_X; force.y = -BUMPER_FORCE_Y;
 				App->physics->Bounce(ball, force);
 				found = true;
 			}
@@ -506,7 +506,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 			{
 				if (bodyB == currentLight->data->sensor)
 				{
-					if (currentLight->data->counter > 100)
+					if (currentLight->data->counter > LIGHT_ACTIVATION_SPACING)
 					{
 						score += currentLight->data->scoreGiven;
 						currentLight->data->lights_on++;
