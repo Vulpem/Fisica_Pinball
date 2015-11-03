@@ -35,34 +35,62 @@ bool ModuleInput::Init()
 // Called every draw update
 update_status ModuleInput::PreUpdate()
 {
-	SDL_PumpEvents();
+	static SDL_Event event;
 
 	const Uint8* keys = SDL_GetKeyboardState(NULL);
-	
-	for(int i = 0; i < MAX_KEYS; ++i)
+
+	for (int i = 0; i < MAX_KEYS; ++i)
 	{
-		if(keys[i] == 1)
+		if (keys[i] == 1)
 		{
-			if(keyboard[i] == KEY_IDLE)
+			if (keyboard[i] == KEY_IDLE)
 				keyboard[i] = KEY_DOWN;
 			else
 				keyboard[i] = KEY_REPEAT;
 		}
 		else
 		{
-			if(keyboard[i] == KEY_REPEAT || keyboard[i] == KEY_DOWN)
+			if (keyboard[i] == KEY_REPEAT || keyboard[i] == KEY_DOWN)
 				keyboard[i] = KEY_UP;
 			else
 				keyboard[i] = KEY_IDLE;
 		}
 	}
 
-	if(keyboard[SDL_SCANCODE_ESCAPE] == KEY_UP)
-		return UPDATE_STOP;
+	for (int i = 0; i < NUM_MOUSE_BUTTONS; ++i)
+	{
+		if (mouse_buttons[i] == KEY_DOWN)
+			mouse_buttons[i] = KEY_REPEAT;
 
-	SDL_GetMouseState(&mouse_x, &mouse_y);
-	mouse_x /= SCREEN_SIZE;
-	mouse_y /= SCREEN_SIZE;
+		if (mouse_buttons[i] == KEY_UP)
+			mouse_buttons[i] = KEY_IDLE;
+	}
+
+	while (SDL_PollEvent(&event) != 0)
+	{
+		switch (event.type)
+		{
+		case SDL_QUIT:
+			break;
+
+		case SDL_MOUSEBUTTONDOWN:
+			mouse_buttons[event.button.button - 1] = KEY_DOWN;
+			//LOG("Mouse button %d down", event.button.button-1);
+			break;
+
+		case SDL_MOUSEBUTTONUP:
+			mouse_buttons[event.button.button - 1] = KEY_UP;
+			//LOG("Mouse button %d up", event.button.button-1);
+			break;
+
+		case SDL_MOUSEMOTION:
+			mouse_x = event.motion.x;
+			mouse_y = event.motion.y;
+			//LOG("Mouse motion x %d y %d", mouse_motion_x, mouse_motion_y);
+			break;
+
+		}
+	}
 
 	return UPDATE_CONTINUE;
 }

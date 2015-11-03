@@ -30,12 +30,14 @@ bool ModulePhysics::Start()
 
 	world = new b2World(b2Vec2(GRAVITY_X, GRAVITY_Y));
 	world->SetContactListener((b2ContactListener*)this);
+	mouseJoint = NULL;
 
 	return true;
 }
 // 
 update_status ModulePhysics::PreUpdate()
 {
+
 	world->Step(1.0f / 60.0f, 6, 2);
 
 	return UPDATE_CONTINUE;
@@ -43,6 +45,13 @@ update_status ModulePhysics::PreUpdate()
 
 update_status ModulePhysics::PostUpdate()
 {
+	if (mouseJoint)
+	{
+		b2Vec2 target;
+		target.x = App->input->GetMouseX();
+		target.y = App->input->GetMouseY();
+		mouseJoint->SetTarget(target);
+	}
 
 	if (App->input->GetKey(SDL_SCANCODE_F1) == KEY_DOWN)
 		debug = !debug;
@@ -465,6 +474,45 @@ PhysBody* ModulePhysics::CreateLauncher(int* points, int size, int pivotX, int p
 }
 
 // 
+
+b2MouseJoint* ModulePhysics::CreateMouseJoint(PhysBody* body)
+{
+	b2MouseJointDef joint;
+	joint.bodyA = body->body;
+	joint.bodyB = App->scene_intro->bouncyRight->body;
+	joint.collideConnected = true;
+	joint.dampingRatio = 1;
+	joint.maxForce = 1000.0f;
+	joint.type = e_mouseJoint;
+	joint.target.x = App->input->GetMouseX();
+	joint.target.y = App->input->GetMouseY();
+
+	mouseJoint = (b2MouseJoint*) world->CreateJoint(&joint);
+	return mouseJoint;
+
+}
+bool ModulePhysics::DeleteMouseJoint()
+{
+	if (mouseJoint)
+	{
+		b2Joint* currentJoint = world->GetJointList();
+		while (currentJoint)
+		{
+			if (currentJoint == mouseJoint)
+			{
+				world->DestroyJoint(currentJoint);
+				//delete mouseJoint;
+				mouseJoint = NULL;
+				return true;
+			}
+			currentJoint->GetNext();
+		}
+
+	}
+	return false;
+}
+
+//
 
 void ModulePhysics::BeginContact(b2Contact* contact)
 {

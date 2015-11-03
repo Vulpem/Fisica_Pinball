@@ -49,7 +49,7 @@ private:
 	bool GenBackground();
 
 	void SetTitle();
-	void InputCommands();
+	update_status InputCommands();
 	void ResizeBalls();
 	void Magnetize();
 	void ManageLostBalls();

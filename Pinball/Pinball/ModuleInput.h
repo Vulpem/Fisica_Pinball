@@ -2,6 +2,8 @@
 #include "Module.h"
 #include "Globals.h"
 
+#define NUM_MOUSE_BUTTONS 5
+
 enum KEY_STATE
 {
 	KEY_IDLE = 0,
@@ -21,6 +23,11 @@ public:
 	update_status PreUpdate();
 	bool CleanUp();
 
+	KEY_STATE GetMouseButtonDown(int id) const
+	{
+		return mouse_buttons[id - 1];
+	}
+
 	KEY_STATE GetKey(int id) const
 	{
 		return keyboard[id];
@@ -37,6 +44,7 @@ public:
 	}
 
 private:
+	KEY_STATE	mouse_buttons[NUM_MOUSE_BUTTONS];
 	KEY_STATE* keyboard;
 	int mouse_x;
 	int mouse_y;

@@ -92,6 +92,9 @@ public:
 	PhysBody* CreateFlipper(int* points, int pivotX, int pivotY, int right);
 	PhysBody* CreateLauncher(int* points, int size, int pivotX, int pivotY);
 
+	b2MouseJoint* CreateMouseJoint(PhysBody* body);
+	bool DeleteMouseJoint();
+
 	void BeginContact(b2Contact* contact);
 
 	void InvertGravity();
@@ -104,6 +107,8 @@ public:
 
 private:
 	//DEBUG
+	b2MouseJoint* mouseJoint;
+
 	b2Vec2 pos1;
 	b2Vec2 pos2;
 	b2Vec2 norm;

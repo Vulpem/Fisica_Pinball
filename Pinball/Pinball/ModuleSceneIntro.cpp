@@ -40,9 +40,10 @@ bool ModuleSceneIntro::Start()
 // Update
 update_status ModuleSceneIntro::Update()
 {
+	update_status ret = UPDATE_CONTINUE;
 	SetTitle();
 	
-	InputCommands();
+	ret = InputCommands();
 
 	ManageLostBalls();
 
@@ -57,7 +58,7 @@ update_status ModuleSceneIntro::Update()
 
 	Draw();
 
-	return UPDATE_CONTINUE;
+	return ret;
 }
 
 // Post Update
@@ -163,9 +164,14 @@ void ModuleSceneIntro::SetTitle()
 	App->window->SetTitle(title);
 }
 
-void ModuleSceneIntro::InputCommands()
+update_status ModuleSceneIntro::InputCommands()
 {
+	update_status ret = UPDATE_CONTINUE;
 	//GAME INPUT COMMANDS
+	if (App->input->GetKey(SDL_SCANCODE_ESCAPE) == KEY_DOWN)
+	{
+		ret = UPDATE_STOP;
+	}
 	if (App->input->GetKey(SDL_SCANCODE_RIGHT) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_LEFT) == KEY_DOWN)
 	{
 		App->audio->PlayFx(flipper_fx);
@@ -188,7 +194,6 @@ void ModuleSceneIntro::InputCommands()
 	{
 		leftFlipper->body->ApplyAngularImpulse(DEGTORAD * 50, true);
 	}
-
 	if (!started)
 	{
 		if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_DOWN) == KEY_DOWN)
@@ -199,6 +204,23 @@ void ModuleSceneIntro::InputCommands()
 	}
 
 	//DEBUGGING INPUT COMMANDS
+	if (App->input->GetMouseButtonDown(1) == KEY_DOWN)
+	{
+		p2List_item<PhysBody*>* item = balls.getFirst();
+		while (item)
+		{
+			if (item->data->Contains(App->input->GetMouseX(), App->input->GetMouseY()))
+			{
+				App->physics->CreateMouseJoint(item->data);
+			}
+			item = item->next;
+		}
+	}
+	if (App->input->GetMouseButtonDown(1) == KEY_UP)
+	{
+		App->physics->DeleteMouseJoint();
+	}
+
 	if (App->input->GetKey(SDL_SCANCODE_1) == KEY_DOWN)
 	{
 		ballsToAdd++;
@@ -227,6 +249,7 @@ void ModuleSceneIntro::InputCommands()
 	{
 		App->physics->InvertGravity();
 	}
+	return ret;
 }
 
 void ModuleSceneIntro::ResizeBalls()
