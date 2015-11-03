@@ -588,6 +588,8 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 //Keep minimized whenever possible, chaos down there!
 bool ModuleSceneIntro::GenBackground()
 {
+
+#pragma region Static_Shapes
 	bool ret = true;
 	int exterior[50] = {
 		232, 650,
@@ -663,17 +665,6 @@ bool ModuleSceneIntro::GenBackground()
 	};
 	App->physics->CreateChain(rightBumper, 18);
 
-	int rightBumperBis[8] = {
-		447, 489,
-		475, 394,
-		466, 394,
-		433, 489
-	};
-	//App->physics->CreateChain( rightBumperBis, 8, 2.0f);
-	bouncyRight = App->physics->CreatePolygon(rightBumperBis, 8);
-	bouncyRight->listener = App->scene_intro;
-
-
 	int leftBumper[20] = {
 		213, 509,
 		164, 486,
@@ -687,16 +678,6 @@ bool ModuleSceneIntro::GenBackground()
 		221, 507
 	};
 	App->physics->CreateChain(leftBumper, 20);
-
-	int leftBumperBis[8] = {
-		203, 483,
-		217, 482,
-		190, 389,
-		181, 394
-	};
-	//App->physics->CreateChain( leftBumperBis, 8, 2.0f);
-	bouncyLeft = App->physics->CreatePolygon(leftBumperBis, 8);
-	bouncyLeft->listener = App->scene_intro;
 
 	int fan[38] = {
 		292, 243,
@@ -794,6 +775,87 @@ bool ModuleSceneIntro::GenBackground()
 	};
 	App->physics->CreateChain(rampZone, 38);
 
+	int bottomTriangle[6] = {
+		312, 651,
+		323, 633,
+		333, 652
+	};
+	App->physics->CreateChain(bottomTriangle, 6);
+#pragma endregion Static background shapes.
+
+
+#pragma region Kill_Balls_Zone
+	int loseBall[8] = {
+		0, 0,
+		0, 670,
+		700, 670,
+		700, 0
+	};
+	lostBallZone = App->physics->CreateChain(loseBall, 8);
+	lostBallZone->listener = App->scene_intro;
+#pragma endregion Collider which deletes balls on touch
+
+
+#pragma region Flippers
+	int rFlipper[16] = {
+		425, 562,
+		359, 590,
+		352, 596,
+		352, 602,
+		357, 606,
+		435, 583,
+		441, 574,
+		435, 562
+	};
+	rightFlipper = App->physics->CreateFlipper(rFlipper, 430, 570, 1);
+
+	int lFlipper[16] = {
+		221, 560,
+		291, 592,
+		295, 599,
+		292, 605,
+		285, 606,
+		210, 585,
+		206, 574,
+		211, 563
+	};
+	leftFlipper = App->physics->CreateFlipper(lFlipper, 220, 570, 0);
+#pragma endregion 
+
+
+#pragma region Launcher
+	int launcherp[8] = {
+		620, 628,
+		666, 625,
+		671, 645,
+		623, 645
+	};
+	launcher = App->physics->CreateLauncher(launcherp, 8, 690, 650);
+#pragma endregion 
+
+
+#pragma region Bumpers
+	int rightBumperBis[8] = {
+		447, 489,
+		475, 394,
+		466, 394,
+		433, 489
+	};
+	bouncyRight = App->physics->CreatePolygon(rightBumperBis, 8);
+	bouncyRight->listener = App->scene_intro;
+
+	int leftBumperBis[8] = {
+		203, 483,
+		217, 482,
+		190, 389,
+		181, 394
+	};
+	bouncyLeft = App->physics->CreatePolygon(leftBumperBis, 8);
+	bouncyLeft->listener = App->scene_intro;
+#pragma endregion 
+
+
+#pragma region Orange_Top_Bouncers
 	int orangeLeft[14] = {
 		292, 100,
 		294, 104,
@@ -827,56 +889,11 @@ bool ModuleSceneIntro::GenBackground()
 		374, 93
 	};
 	OrangeBouncers.PushBack(App->physics->CreateChain(orangeRight, 14, 2.0f));
+#pragma endregion 
 
-	int bottomTriangle[6] = {
-		312, 651,
-		323, 633,
-		333, 652
-	};
-	App->physics->CreateChain(bottomTriangle, 6);
 
-	int loseBall[8] = {
-		0, 0,
-		0, 670,
-		700, 670,
-		700, 0
-	};
-	lostBallZone = App->physics->CreateChain(loseBall, 8);
-	lostBallZone->listener = App->scene_intro;
-
-	int rFlipper[16] = {
-		425, 562,
-		359, 590,
-		352, 596,
-		352, 602,
-		357, 606,
-		435, 583,
-		441, 574,
-		435, 562
-	};
-	rightFlipper = App->physics->CreateFlipper(rFlipper, 430, 570, 1);
-
-	int lFlipper[16] = {
-		221, 560,
-		291, 592,
-		295, 599,
-		292, 605,
-		285, 606,
-		210, 585,
-		206, 574,
-		211, 563
-	};
-	leftFlipper = App->physics->CreateFlipper(lFlipper, 220, 570, 0);
-
-	int launcherp[8] = {
-		620, 628,
-		666, 625,
-		671, 645,
-		623, 645
-	};
-	launcher = App->physics->CreateLauncher(launcherp, 8, 690, 650);
-
-	//////Activable walls
+#pragma region Activable_Walls
+	//BLOCKER ACTIVABLE WALL
 	int launcherBlocker[8] = {
 		522, 243,
 		548, 179,
@@ -885,10 +902,10 @@ bool ModuleSceneIntro::GenBackground()
 	};
 
 	int launcherDeactivator[8] = {
-	533, 271,
-	568, 269,
-	553, 190,
-	525, 245
+		533, 271,
+		568, 269,
+		553, 190,
+		525, 245
 	};
 
 
@@ -901,7 +918,7 @@ bool ModuleSceneIntro::GenBackground()
 	activableBodies launcherBlock(App->physics->CreateChain(launcherBlocker, 8), App->physics->CreateSensor(launcherActivator, 8), App->physics->CreateSensor(launcherDeactivator, 8));
 	activable.add(launcherBlock);
 
-	//////Activable walls
+	//TOP_LEFT ACTIVABLE WALL
 	int topLeftBlocker[8] = {
 		302, 32,
 		306, 15,
@@ -925,7 +942,7 @@ bool ModuleSceneIntro::GenBackground()
 	activableBodies topLeftBody(App->physics->CreateChain(topLeftBlocker, 8), App->physics->CreateSensor(topLeftActivator, 8), App->physics->CreateSensor(topLeftDeactivator, 8));
 	activable.add(topLeftBody);
 
-	//////Activable walls
+	//TOP_RIGHT ACTIVABLE WALL
 	int topRightBlocker[8] = {
 		394, 35,
 		394, 7,
@@ -948,7 +965,11 @@ bool ModuleSceneIntro::GenBackground()
 	};
 	activableBodies topRightBody(App->physics->CreateChain(topRightBlocker, 8), App->physics->CreateSensor(topRightActivator, 8), App->physics->CreateSensor(topRightDeactivator, 8));
 	activable.add(topRightBody);
+#pragma endregion
 
+
+#pragma region Lights
+	//LEFT HOLE (EXTRA BALL)
 	int leftHolePoints[8] = {
 		149, 250,
 		128, 219,
@@ -974,6 +995,8 @@ bool ModuleSceneIntro::GenBackground()
 
 	lights.add(leftHole);
 
+
+	//BLACK BOX
 	int rightHolePoints[8] = {
 		484, 92,
 		453, 52,
@@ -1005,12 +1028,18 @@ bool ModuleSceneIntro::GenBackground()
 
 	lights.add(rightHole);
 
+	//MINI LEFT LIGHT
 	int miniLightLeftP[8] = {
 		310, 55,
 		310, 25,
 		327, 25,
 		327, 55
 	};
+
+
+#pragma endregion
+
+
 
 	return ret;
 }

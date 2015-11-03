@@ -503,7 +503,9 @@ void ModulePhysics::Bounce(PhysBody* movable, PhysBody* non_movable, float inten
 
 void ModulePhysics::Bounce(PhysBody* movable, b2Vec2 force)
 {
-
+	b2Vec2 toStop = movable->body->GetLinearVelocity();
+	toStop *= -3; 
+	movable->body->ApplyForceToCenter(toStop, true); 
 	movable->body->ApplyForceToCenter(force, true);
 
 }
