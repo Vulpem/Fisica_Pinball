@@ -27,6 +27,8 @@ bool ModuleSceneIntro::Start()
 	ballLaunched = true;
 	started = false;
 	lifes = 3;
+	textBallSaved = TEXT_CHANGE_DELAY+1;
+	textExtraBall = TEXT_CHANGE_DELAY+1;
 
 	LoadAssets();
 
@@ -98,6 +100,7 @@ void ModuleSceneIntro::LoadAssets()
 	lFlipper = App->textures->Load("pinball/lFlipper.png");
 	circleTexture = App->textures->Load("pinball/circle.png");
 	orange_bump = App->textures->Load("pinball/orange_bump.png");
+	text = App->textures->Load("pinball/text.png");
 
 
 	bonus1_fx = App->audio->LoadFx("pinball/bonus.wav");
@@ -123,6 +126,17 @@ void ModuleSceneIntro::LoadAssets()
 	circle.frames.PushBack(frame5);
 	circle.speed = 0.1f;
 	circle.loop = true;
+
+	texts[0].h = 84;
+	texts[0].w = 154;
+	texts[0].x = 0;
+	texts[0].y = 0;
+	texts[4] = texts[2] = texts[1] = texts[0];
+	texts[1].x = 154;
+	texts[5] = texts[3] = texts[1];
+	texts[2].y = texts[3].y = 84;
+	texts[4].y = texts[5].y = 168;
+
 }
 
 void ModuleSceneIntro::SetTitle()
@@ -235,6 +249,7 @@ void ModuleSceneIntro::ManageLostBalls()
 		{
 			ballsToAdd++;
 			saveBallCounter = 0;
+			textBallSaved = 0;
 		}
 		else
 		{
@@ -327,6 +342,8 @@ void ModuleSceneIntro::Draw()
 		//Drawing background
 		App->renderer->Blit(background, 0, 0, NULL);
 
+		Texts();
+
 		//Drawing "Save Ball" light
 		if (saveBallCounter < SAVE_BALL_TIMER)
 		{
@@ -392,6 +409,42 @@ void ModuleSceneIntro::Draw()
 		}
 
 	}
+}
+
+void ModuleSceneIntro::Texts()
+{
+	if (textBallSaved <= TEXT_CHANGE_DELAY)
+	{
+		textBallSaved++;
+	}
+	if (textExtraBall <= TEXT_CHANGE_DELAY)
+	{
+		textExtraBall++;
+	}
+
+	if (!started && lifes == 3)
+	{
+		App->renderer->Blit(text, 253, 297, &texts[0]);
+	}
+	else if (textBallSaved < TEXT_CHANGE_DELAY)
+	{
+		App->renderer->Blit(text, 253, 297, &texts[1]);
+	}
+	else if (textExtraBall < TEXT_CHANGE_DELAY)
+	{
+		App->renderer->Blit(text, 253, 297, &texts[2]);
+	}
+	else
+	{
+		switch (lifes)
+		{
+		case 1: {App->renderer->Blit(text, 253, 297, &texts[3]); break; }
+		case 2: {App->renderer->Blit(text, 253, 297, &texts[4]); break; }
+		case 3: {App->renderer->Blit(text, 253, 297, &texts[5]); break; }
+		}
+	}
+
+
 }
 
 
@@ -515,6 +568,7 @@ void ModuleSceneIntro::OnCollision(PhysBody* ball, PhysBody* bodyB)
 						{
 							//Resetting lights and adding an extra ball if necessary
 							ballsToAdd++;
+							textExtraBall = 0;
 							currentLight->data->lights_on = 0;
 						}
 						else

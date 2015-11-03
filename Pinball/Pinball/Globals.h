@@ -45,3 +45,5 @@ enum update_status
 
 #define BUMPER_FORCE_X 20
 #define BUMPER_FORCE_Y 50
+
+#define TEXT_CHANGE_DELAY 200

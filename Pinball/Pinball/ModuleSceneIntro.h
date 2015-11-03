@@ -57,6 +57,7 @@ private:
 	void ManageActivableBodies();
 
 	void Draw();
+	void Texts();
 
 	void AddBalls();
 	void DeleteDeadBalls();
@@ -70,6 +71,8 @@ public:
 	SDL_Texture* rFlipper;
 	SDL_Texture* lFlipper;
 	SDL_Texture* orange_bump;
+	SDL_Texture* text;
+	SDL_Rect texts[6];
 
 	SDL_Texture* ball;
 	uint bonus1_fx;
@@ -84,6 +87,8 @@ public:
 	uint flipper_fx;
 
 	int ballBounceCounter;
+	int textExtraBall;
+	int textBallSaved;
 
 	int launcherCount;
 	PhysBody* launcher;
